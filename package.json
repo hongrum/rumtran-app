@@ -1,0 +1,21 @@
+{
+  "name": "rumtran-khoe-dep-app",
+  "version": "1.0.0",
+  "description": "App đặt lịch chăm sóc sức khỏe & dưỡng sinh tận nhà — RUM TRẦN KHỎE ĐẸP (bản app thật, có backend + CSDL).",
+  "type": "commonjs",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "seed": "node server/seed.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "author": "LI ACADEMY / RUM TRẦN KHỎE ĐẸP",
+  "license": "UNLICENSED",
+  "private": true
+}

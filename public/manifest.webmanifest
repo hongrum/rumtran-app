@@ -1,0 +1,17 @@
+{
+  "name": "RUM TRẦN KHỎE ĐẸP — Chăm sóc sức khỏe & dưỡng sinh tận nhà",
+  "short_name": "RUM TRẦN",
+  "description": "Đặt lịch dưỡng sinh, bấm huyệt, chăm sóc sức khỏe tận nhà. 350.000đ trọn gói, không phát sinh.",
+  "lang": "vi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbf7ef",
+  "theme_color": "#d81f26",
+  "categories": ["health", "lifestyle", "medical"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RUM TRẦN — Quản trị điều phối</title>
+<link rel="stylesheet" href="style.css" />
+<style>
+  body{background:#efe4cf}
+  .admin-wrap{max-width:1100px;margin:0 auto;padding:1rem}
+  .admin-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem}
+  .admin-head h1{color:var(--red);font-size:1.3rem;margin:0}
+  .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:1rem}
+  .stat-box{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:.8rem;text-align:center;box-shadow:var(--shadow-sm)}
+  .stat-box strong{display:block;font-size:1.3rem;color:var(--red)}
+  .stat-box span{font-size:.74rem;color:var(--muted);font-weight:700}
+  table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm);font-size:.84rem}
+  th,td{padding:.6rem .5rem;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--surface-2);color:var(--gold-d);font-size:.72rem;text-transform:uppercase;letter-spacing:.03em}
+  .status-pill{display:inline-block;font-size:.7rem;font-weight:800;border-radius:999px;padding:.2rem .55rem;background:var(--surface-2);color:var(--gold-d)}
+  .status-pill.done{background:#e9f6ed;color:var(--green-ok)}
+  td select{border:1px solid var(--line);border-radius:8px;padding:.3rem;font-size:.8rem;max-width:130px}
+  td .btn{min-height:auto;padding:.35rem .6rem;font-size:.76rem;margin-top:.3rem}
+  .admin-login{max-width:360px;margin:3rem auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:1.4rem;box-shadow:var(--shadow)}
+  @media(max-width:640px){.stat-row{grid-template-columns:repeat(2,1fr)}table{font-size:.76rem}.hide-sm{display:none}}
+</style>
+</head>
+<body>
+<div class="admin-wrap">
+  <div id="adminLogin" class="admin-login">
+    <h1 style="color:var(--red);text-align:center">🔧 Quản trị điều phối</h1>
+    <p class="hint center">RUM TRẦN KHỎE ĐẸP — tổng đài</p>
+    <div class="api-error" id="loginErr"></div>
+    <label class="field">Khóa quản trị
+      <input id="adminKey" type="password" placeholder="Nhập khóa quản trị" />
+    </label>
+    <button class="btn btn-primary btn-block btn-lg" onclick="adminLogin()">Đăng nhập</button>
+    <p class="muted small center" style="margin-top:.8rem">Khóa mặc định (demo): <code>rumtran-admin</code> — đổi khi lên thật.</p>
+  </div>
+
+  <div id="adminApp" class="hidden">
+    <div class="admin-head">
+      <h1>🔧 Điều phối đơn — RUM TRẦN</h1>
+      <div><button class="btn btn-outline" onclick="loadBookings()">🔄 Làm mới</button>
+        <button class="btn btn-ghost" onclick="adminLogout()">Thoát</button></div>
+    </div>
+    <div class="stat-row" id="statRow"></div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Mã đơn</th><th>Khách</th><th class="hide-sm">Dịch vụ</th><th class="hide-sm">Thời gian</th><th>Tiền</th><th>KTV</th><th>Trạng thái</th></tr></thead>
+        <tbody id="bookingRows"></tbody>
+      </table>
+    </div>
+    <p class="muted small" style="margin-top:1rem">Hiển thị tối đa 200 đơn gần nhất.</p>
+  </div>
+</div>
+<script src="admin.js"></script>
+</body>
+</html>

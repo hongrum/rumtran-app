@@ -1,0 +1,68 @@
+/* RUM TRẦN — Trang quản trị điều phối (tổng đài) */
+(function () {
+  'use strict';
+  var KEY = 'rt_admin_key';
+  var techs = [], statuses = [];
+
+  function el(id) { return document.getElementById(id); }
+  function money(n) { return Number(n || 0).toLocaleString('vi-VN') + 'đ'; }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function key() { return localStorage.getItem(KEY); }
+  function api(path, method, body) {
+    return fetch(path, { method: method || 'GET', headers: { 'Content-Type': 'application/json', 'x-admin-key': key() || '' }, body: body ? JSON.stringify(body) : undefined })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || ('Lỗi ' + r.status)); return d; }); });
+  }
+
+  function adminLogin() {
+    var k = el('adminKey').value.trim();
+    fetch('/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: k }) })
+      .then(function (r) { return r.json().then(function (d) { if (!r.ok) throw new Error(d.error || 'Sai khóa'); return d; }); })
+      .then(function () { localStorage.setItem(KEY, k); showApp(); })
+      .catch(function (e) { var er = el('loginErr'); er.textContent = e.message; er.classList.add('show'); });
+  }
+  window.adminLogin = adminLogin;
+  function adminLogout() { localStorage.removeItem(KEY); location.reload(); }
+  window.adminLogout = adminLogout;
+
+  function showApp() { el('adminLogin').classList.add('hidden'); el('adminApp').classList.remove('hidden'); loadBookings(); }
+
+  function loadBookings() {
+    api('/api/admin/bookings').then(function (res) {
+      techs = res.techs; statuses = res.statuses;
+      var s = res.stats;
+      el('statRow').innerHTML =
+        '<div class="stat-box"><strong>' + s.total + '</strong><span>Tổng đơn</span></div>' +
+        '<div class="stat-box"><strong>' + s.dangXuLy + '</strong><span>Đang xử lý</span></div>' +
+        '<div class="stat-box"><strong>' + s.hoanThanh + '</strong><span>Hoàn thành</span></div>' +
+        '<div class="stat-box"><strong>' + money(s.doanhThu) + '</strong><span>Tổng giá trị</span></div>';
+      el('bookingRows').innerHTML = res.bookings.map(rowHtml).join('') || '<tr><td colspan="7" style="text-align:center;color:#7b6857;padding:1.5rem">Chưa có đơn nào.</td></tr>';
+    }).catch(function (e) { if (/khóa/i.test(e.message)) { localStorage.removeItem(KEY); location.reload(); } else alert(e.message); });
+  }
+  window.loadBookings = loadBookings;
+
+  function rowHtml(b) {
+    var svc = b.items.map(function (i) { return i.serviceId + ' (' + i.minutes + 'p)'; }).join(', ');
+    var forWho = b.bookingFor === 'relative' ? ('<br><small>👵 cho: ' + esc(b.patientName || '') + (b.relation ? ' (' + esc(b.relation) + ')' : '') + '</small>') : '';
+    var techOpts = '<option value="">— Chọn KTV —</option>' + techs.map(function (t) { return '<option value="' + t.id + '"' + (b.tech && b.tech.id === t.id ? ' selected' : '') + '>' + esc(t.name) + '</option>'; }).join('');
+    var done = b.statusIdx >= statuses.length - 1;
+    var st = statuses[b.statusIdx] || { label: '?', icon: '' };
+    var advBtn = done ? '' : '<button class="btn btn-primary" onclick="advance(\'' + b.code + '\')">⏭ ' + esc((statuses[b.statusIdx + 1] || {}).label || '') + '</button>';
+    var rating = (b.ratingStars ? '<br><small>⭐ ' + b.ratingStars + '</small>' : '');
+    return '<tr>' +
+      '<td><strong>' + esc(b.code) + '</strong>' + (b.urgent ? '<br><small style="color:#d81f26">⚡ gấp</small>' : '') + '</td>' +
+      '<td>' + esc(b.custName) + '<br><small>' + esc(b.custPhone) + '</small>' + forWho + '</td>' +
+      '<td class="hide-sm">' + esc(svc) + '</td>' +
+      '<td class="hide-sm">' + esc(b.dateTimeLabel || '') + '<br><small>' + esc(b.address || '') + '</small></td>' +
+      '<td>' + money(b.total) + rating + '</td>' +
+      '<td><select onchange="assign(\'' + b.code + '\', this.value)">' + techOpts + '</select></td>' +
+      '<td><span class="status-pill' + (done ? ' done' : '') + '">' + st.icon + ' ' + esc(st.label) + '</span><br>' + advBtn + '</td>' +
+      '</tr>';
+  }
+
+  function assign(code, techId) { if (!techId) return; api('/api/admin/bookings/' + code + '/assign', 'POST', { techId: Number(techId) }).then(function () { loadBookings(); }).catch(function (e) { alert(e.message); }); }
+  window.assign = assign;
+  function advance(code) { api('/api/admin/bookings/' + code + '/advance', 'POST').then(function () { loadBookings(); }).catch(function (e) { alert(e.message); }); }
+  window.advance = advance;
+
+  if (key()) showApp();
+})();

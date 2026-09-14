@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>RUM TRẦN KHỎE ĐẸP — Chăm sóc sức khỏe & dưỡng sinh tận nhà</title>
+<meta name="description" content="App đặt lịch dưỡng sinh, bấm huyệt, chăm sóc sức khỏe tận nhà — RUM TRẦN KHỎE ĐẸP. 350.000đ trọn gói, không phát sinh. Có mặt trong 30 phút." />
+<meta name="theme-color" content="#d81f26" />
+<link rel="manifest" href="/manifest.webmanifest" />
+<link rel="icon" href="/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/icon.svg" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="RUM TRẦN" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="device" id="device">
+
+  <div class="topfixed">
+    <header class="brandbar">
+      <div class="brand" onclick="goTo('home')" role="button" tabindex="0" aria-label="Về trang chủ">
+        <span class="brand-badge">RT</span>
+        <div class="brand-text">
+          <strong>RUM TRẦN KHỎE ĐẸP</strong>
+          <small>Hạnh phúc mỗi ngày</small>
+        </div>
+      </div>
+      <div id="brandRight">
+        <a class="brandbar-call" href="tel:0762419688" aria-label="Gọi hotline">📞</a>
+      </div>
+    </header>
+
+    <div class="stepbar hidden" id="stepbar">
+      <button class="stepbar-back" onclick="goBack()" aria-label="Quay lại">←</button>
+      <div class="stepbar-mid">
+        <span class="stepbar-title" id="stepbarTitle">Chọn dịch vụ</span>
+        <div class="stepbar-progress"><div class="stepbar-fill" id="stepbarFill" style="width:0%"></div></div>
+      </div>
+      <span class="stepbar-count" id="stepbarCount">Bước 1/6</span>
+    </div>
+  </div>
+
+  <main id="main">
+
+    <!-- ============ LOGIN ============ -->
+    <section id="screen-login" class="screen active">
+      <div class="login-wrap">
+        <div class="login-logo">RT</div>
+        <h1>RUM TRẦN KHỎE ĐẸP</h1>
+        <p class="slogan">✧ Chăm sóc sức khỏe & dưỡng sinh tận nhà ✧</p>
+        <p class="hint center">Đăng nhập bằng số điện thoại để đặt lịch, tích điểm và theo dõi đơn.</p>
+        <div class="api-error" id="loginError"></div>
+        <label class="field">Họ tên
+          <input id="loginName" type="text" placeholder="VD: Nguyễn Văn A" />
+        </label>
+        <label class="field">Số điện thoại
+          <input id="loginPhone" type="tel" inputmode="numeric" placeholder="VD: 0901 234 567" />
+        </label>
+        <button class="btn btn-primary btn-block btn-lg" id="loginBtn" onclick="doLogin()">Đăng nhập / Đăng ký</button>
+        <p class="muted small center" style="margin-top:.8rem">Bằng việc tiếp tục, Anh/Chị đồng ý cho chúng tôi lưu thông tin đặt lịch để phục vụ.</p>
+      </div>
+    </section>
+
+    <!-- ============ HOME ============ -->
+    <section id="screen-home" class="screen">
+      <div class="hero">
+        <span class="eyebrow">🌿 Dưỡng sinh · Chăm sóc sức khỏe tận nhà</span>
+        <h1>RUM TRẦN<br>KHỎE ĐẸP</h1>
+        <p class="slogan">✧ Hạnh phúc mỗi ngày ✧</p>
+        <p class="hero-desc">Dưỡng sinh · Bấm huyệt · Thư giãn · Chăm sóc sức khỏe — kỹ thuật viên được đào tạo bài bản, tận tâm đến tận nhà chăm sóc Anh/Chị và người thân.</p>
+
+        <div class="hero-price">
+          <div class="price-tag">
+            <strong>350.000đ</strong>
+            <span>trọn gói 60 phút — không phát sinh</span>
+          </div>
+          <div class="price-tag alt">
+            <strong>⚡ 30 phút</strong>
+            <span>có mặt tận nơi</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg btn-block" onclick="goTo('services')">📅 Đặt lịch ngay</button>
+        <div class="hero-links">
+          <a href="tel:0762419688" class="btn btn-outline">📞 Gọi tư vấn</a>
+          <a href="https://zalo.me/0762419688" target="_blank" rel="noopener" class="btn btn-outline">💬 Chat Zalo</a>
+        </div>
+      </div>
+
+      <div class="trust-row">
+        <div class="trust-badge">✔ <span>KTV được đào tạo bài bản, tận tâm chăm sóc</span></div>
+        <div class="trust-badge">✔ <span>Giá trọn gói, không phát sinh</span></div>
+        <div class="trust-badge">✔ <span>Chuyên dưỡng sinh, thư giãn — lành mạnh, an toàn</span></div>
+      </div>
+
+      <h2 class="section-title">Dịch vụ của RUM TRẦN</h2>
+      <p class="hint center">Chạm vào 1 dịch vụ để bắt đầu đặt lịch</p>
+      <div class="svc-grid" id="homeServiceGrid"></div>
+
+      <h2 class="section-title">Khách hàng nói gì <small>(minh hoạ)</small></h2>
+      <div class="testi-row">
+        <div class="testi-card">"Ba tôi lớn tuổi được các bạn xoa bóp dưỡng sinh rất nhẹ nhàng, ngủ ngon hơn hẳn." <strong>— Cô Lan, Q.7</strong></div>
+        <div class="testi-card">"Giá rõ ràng 350k không phát sinh gì thêm, đúng như quảng cáo." <strong>— Anh Huy, Thủ Đức</strong></div>
+        <div class="testi-card">"Bấm huyệt xong hết mỏi vai gáy, kỹ thuật viên tận tâm nên rất an tâm." <strong>— Chị Thảo, Bình Thạnh</strong></div>
+      </div>
+
+      <footer class="home-footer">
+        <p class="disclaimer">⚠️ Hiệu quả tùy cơ địa, không thay thế chỉ định của bác sĩ.</p>
+        <p class="legal-note">Chuyên dưỡng sinh, xoa bóp bấm huyệt, thư giãn và chăm sóc sức khỏe tận nhà — kỹ thuật viên được <strong>đào tạo bài bản, tận tâm</strong>, thao tác nhẹ nhàng, an toàn.</p>
+        <p class="muted">© RUM TRẦN KHỎE ĐẸP · Hotline / Zalo 0762 419 688</p>
+      </footer>
+    </section>
+
+    <!-- ============ SERVICES ============ -->
+    <section id="screen-services" class="screen">
+      <h2>Chọn dịch vụ</h2>
+      <p class="hint">Có thể chọn nhiều dịch vụ cùng lúc — mỗi dịch vụ chọn 1 mức thời lượng. Giá đã trọn gói, <strong>không phát sinh thêm</strong>.</p>
+      <div class="member-badge hidden" id="serviceMemberBadge"></div>
+      <div id="serviceList"></div>
+
+      <h3 class="subhead">Dịch vụ cộng thêm <small>(tuỳ chọn)</small></h3>
+      <div id="addonList" class="addon-row"></div>
+
+      <div class="actionbar">
+        <div class="actionbar-info">
+          <span id="svcCount">Chưa chọn dịch vụ nào</span>
+          <strong id="svcTotal"></strong>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" id="svcContinueBtn" disabled onclick="goNextFrom('services')">Tiếp tục →</button>
+      </div>
+    </section>
+
+    <!-- ============ TECH ============ -->
+    <section id="screen-tech" class="screen">
+      <h2>Chọn kỹ thuật viên</h2>
+      <button class="btn btn-gold btn-block" id="autoTechBtn" onclick="selectAutoTech()">🤖 Để hệ thống chọn giúp (nhanh nhất)</button>
+      <p class="hint">Hoặc tự chọn kỹ thuật viên bên dưới — ai cũng được đào tạo bài bản, tận tâm:</p>
+      <div class="filter-row">
+        <select id="filterArea" onchange="renderTech()"><option value="">📍 Tất cả khu vực</option></select>
+        <select id="filterGender" onchange="renderTech()">
+          <option value="">👥 Nam & Nữ</option>
+          <option value="nu">👩 KTV Nữ</option>
+          <option value="nam">👨 KTV Nam</option>
+        </select>
+      </div>
+      <div id="techList"></div>
+      <div class="actionbar">
+        <button class="btn btn-primary btn-block btn-lg" id="techContinueBtn" disabled onclick="goNextFrom('tech')">Tiếp tục →</button>
+      </div>
+    </section>
+
+    <!-- ============ TIME ============ -->
+    <section id="screen-time" class="screen">
+      <h2>Chọn thời gian</h2>
+      <button class="btn btn-urgent btn-block btn-lg" id="urgentBtn" onclick="selectUrgent()">⚡ Đặt gấp — Có mặt trong 30 phút</button>
+      <p class="hint center">— hoặc chọn ngày giờ cụ thể —</p>
+      <div class="date-chips" id="dateChips"></div>
+      <div class="time-grid" id="timeSlots"></div>
+      <div class="actionbar">
+        <div class="actionbar-info"><span id="timeSelectedInfo">Vui lòng chọn thời gian</span></div>
+        <button class="btn btn-primary btn-block btn-lg" id="timeContinueBtn" disabled onclick="goNextFrom('time')">Tiếp tục →</button>
+      </div>
+    </section>
+
+    <!-- ============ ADDRESS ============ -->
+    <section id="screen-address" class="screen">
+      <h2>Địa chỉ & tình trạng</h2>
+      <p class="hint">Đặt cho ai ạ?</p>
+      <div class="forwhom-row">
+        <button type="button" class="forwhom-btn selected" id="forSelfBtn" onclick="setBookingFor('self')">🧍 Cho tôi</button>
+        <button type="button" class="forwhom-btn" id="forRelativeBtn" onclick="setBookingFor('relative')">👵 Cho người thân</button>
+      </div>
+      <div id="relativeFields" class="hidden">
+        <label class="field">Tên người được chăm sóc
+          <input id="inpPatient" type="text" oninput="onAddressInput()" placeholder="VD: Bà Nguyễn Thị B" />
+        </label>
+        <label class="field">Quan hệ với bạn
+          <input id="inpRelation" type="text" oninput="onAddressInput()" placeholder="VD: Mẹ, Ba, Ông, Bà..." />
+        </label>
+      </div>
+      <label class="field">Họ tên người đặt
+        <input id="inpName" type="text" oninput="onAddressInput()" placeholder="VD: Nguyễn Văn A" />
+      </label>
+      <label class="field">Số điện thoại liên hệ
+        <input id="inpPhone" type="tel" oninput="onAddressInput()" placeholder="VD: 0901 234 567" />
+      </label>
+      <label class="field">Địa chỉ phục vụ
+        <textarea id="inpAddress" rows="2" oninput="onAddressInput()" placeholder="Số nhà, đường, phường/xã, quận/huyện..."></textarea>
+      </label>
+      <label class="field">Mô tả tình trạng <small>(giúp KTV chuẩn bị tốt hơn)</small>
+        <textarea id="inpNote" rows="3" oninput="onAddressInput()" placeholder="VD: Đau mỏi vai gáy, ngồi máy tính nhiều. Hoặc: Người lớn tuổi, cần dưỡng sinh nhẹ nhàng..."></textarea>
+      </label>
+      <div class="actionbar">
+        <button class="btn btn-primary btn-block btn-lg" id="addrContinueBtn" disabled onclick="goNextFrom('address')">Tiếp tục →</button>
+      </div>
+    </section>
+
+    <!-- ============ CONFIRM ============ -->
+    <section id="screen-confirm" class="screen">
+      <h2>Xác nhận đơn</h2>
+      <div class="confirm-card" id="confirmBody"></div>
+      <p class="disclaimer">⚠️ Hiệu quả tùy cơ địa, không thay thế chỉ định của bác sĩ.</p>
+      <div class="actionbar">
+        <button class="btn btn-primary btn-block btn-lg" onclick="goNextFrom('confirm')">Tiếp tục thanh toán →</button>
+      </div>
+    </section>
+
+    <!-- ============ PAYMENT ============ -->
+    <section id="screen-payment" class="screen">
+      <h2>Thanh toán</h2>
+      <div class="pay-options">
+        <label class="pay-opt selected" id="payCashLabel">
+          <input type="radio" name="pay" value="cash" checked onchange="setPayment('cash')" />
+          <span>💵 Tiền mặt khi hoàn thành <em>(mặc định)</em></span>
+        </label>
+        <label class="pay-opt" id="payTransferLabel">
+          <input type="radio" name="pay" value="transfer" onchange="setPayment('transfer')" />
+          <span>🏦 Chuyển khoản / Quét QR</span>
+        </label>
+      </div>
+
+      <div id="qrBlock" class="qr-block hidden">
+        <div class="qr-fake" aria-hidden="true"></div>
+        <p class="qr-caption">Quét QR để chuyển khoản (mô phỏng cổng thanh toán)</p>
+        <div class="qr-bankinfo">
+          <div><span>Ngân hàng:</span><strong>MB Bank</strong></div>
+          <div><span>Số TK:</span><strong>0762 419 688</strong></div>
+          <div><span>Chủ TK:</span><strong>RUM TRAN KHOE DEP</strong></div>
+          <div><span>Nội dung CK:</span><strong id="qrOrderCode">—</strong></div>
+        </div>
+      </div>
+
+      <div class="api-error" id="payError"></div>
+      <div class="confirm-total" id="paymentTotal"></div>
+
+      <div class="actionbar">
+        <button class="btn btn-primary btn-block btn-lg" id="confirmOrderBtn" onclick="createOrder()">✅ Xác nhận đặt lịch</button>
+      </div>
+    </section>
+
+    <!-- ============ TRACKING ============ -->
+    <section id="screen-tracking" class="screen">
+      <div class="success-head">
+        <div class="success-icon">🎉</div>
+        <h2>Đặt lịch thành công!</h2>
+        <p>Mã đơn: <strong id="orderCode">—</strong></p>
+      </div>
+      <div class="stepper" id="trackingStepper"></div>
+      <div class="track-demo" id="trackDemoControls">
+        <p class="hint center">Trạng thái đơn được cập nhật từ hệ thống. Bạn có thể bấm nút dưới để mô phỏng bước tiếp theo.</p>
+        <button class="btn btn-outline btn-block" onclick="advanceStatus()">⏭ Cập nhật trạng thái tiếp theo</button>
+      </div>
+      <div class="tech-card" id="trackingTechCard"></div>
+      <div class="confirm-card" id="trackingSummary"></div>
+      <div class="actionbar" id="trackingRatingBar" style="display:none">
+        <button class="btn btn-primary btn-block btn-lg" onclick="goTo('rating')">⭐ Đánh giá dịch vụ</button>
+      </div>
+    </section>
+
+    <!-- ============ RATING ============ -->
+    <section id="screen-rating" class="screen">
+      <div id="ratingForm">
+        <h2>Đánh giá dịch vụ</h2>
+        <p class="hint center">Cảm ơn Anh/Chị đã tin tưởng RUM TRẦN KHỎE ĐẸP. Buổi phục vụ hôm nay thế nào ạ?</p>
+        <div class="stars" id="starRow"></div>
+        <p class="star-label" id="starLabel">Chạm vào ngôi sao để đánh giá</p>
+        <textarea id="ratingComment" rows="3" placeholder="Chia sẻ cảm nhận của Anh/Chị (không bắt buộc)..."></textarea>
+        <button class="btn btn-primary btn-block btn-lg" onclick="submitRating()">Gửi đánh giá</button>
+        <button class="btn btn-ghost btn-block" onclick="goTo('home')">Bỏ qua, về trang chủ</button>
+      </div>
+      <div id="ratingThanks" class="hidden center">
+        <div class="success-icon">💚</div>
+        <h2>Cảm ơn Anh/Chị rất nhiều!</h2>
+        <p class="hint center">Đánh giá của Anh/Chị giúp RUM TRẦN KHỎE ĐẸP phục vụ tốt hơn mỗi ngày.</p>
+        <button class="btn btn-primary btn-block btn-lg" onclick="goTo('home')">🔁 Đặt lịch mới</button>
+      </div>
+    </section>
+
+    <!-- ============ PRODUCTS ============ -->
+    <section id="screen-products" class="screen">
+      <h2>🛍️ Sản phẩm chăm sóc tại nhà</h2>
+      <p class="hint">Mua sản phẩm tích điểm thưởng — <strong>10.000đ = 1 điểm</strong>. Có thể đổi điểm lấy sản phẩm (không quy đổi ra tiền).</p>
+      <div class="member-badge hidden" id="productMemberBadge"></div>
+      <div class="svc-grid prod-grid" id="productGrid"></div>
+
+      <div class="actionbar" id="productCartBar">
+        <div class="actionbar-info">
+          <span id="productCartCount">Giỏ hàng trống</span>
+          <strong id="productCartTotal"></strong>
+        </div>
+      </div>
+
+      <div class="confirm-card hidden" id="productCheckoutPanel">
+        <div class="confirm-section-head"><span>Xác nhận mua</span></div>
+        <div id="productCartLines"></div>
+        <hr class="confirm-divider">
+        <div class="total-row"><span>Tổng cộng</span><strong id="productCheckoutTotal">0đ</strong></div>
+        <p class="hint" style="margin:.6rem 0 .3rem">Chọn cách thanh toán:</p>
+        <div class="pay-options">
+          <label class="pay-opt selected" id="prodPayCashLabel">
+            <input type="radio" name="prodpay" value="cash" checked onchange="setProductPayment('cash')" />
+            <span>💵 Tiền mặt / chuyển khoản</span>
+          </label>
+          <label class="pay-opt" id="prodPayReferralLabel">
+            <input type="radio" name="prodpay" value="referral" onchange="setProductPayment('referral')" />
+            <span>🔗 Dùng số dư hoa hồng <em id="prodReferralBalanceHint">(0đ)</em></span>
+          </label>
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" onclick="checkoutProductCart()">✅ Xác nhận mua</button>
+        <button class="btn btn-ghost btn-block" onclick="clearProductCart()">Huỷ giỏ hàng</button>
+      </div>
+    </section>
+
+    <!-- ============ ACCOUNT ============ -->
+    <section id="screen-account" class="screen">
+      <h2>👤 Tài khoản của Anh/Chị</h2>
+      <p class="hint" id="accountGreeting">Quản lý điểm thưởng, giới thiệu bạn bè và hội viên tại đây.</p>
+
+      <div class="acc-card">
+        <div class="acc-card-head"><span>🎯 Điểm thưởng</span></div>
+        <div class="acc-points-big"><strong id="accPoints">0</strong><span>điểm tích lũy</span></div>
+        <p class="hint">Tích điểm khi mua sản phẩm hoặc đặt dịch vụ — <strong>10.000đ = 1 điểm</strong>. Điểm CHỈ dùng để đổi sản phẩm, không quy đổi ra tiền.</p>
+        <button class="btn btn-gold btn-block" onclick="goTo('products')">🎁 Đổi điểm lấy sản phẩm</button>
+      </div>
+
+      <div class="acc-card">
+        <div class="acc-card-head"><span>🔗 Link giới thiệu riêng</span></div>
+        <p class="hint">Giới thiệu khách <strong>MỚI</strong> qua link này → Anh/Chị nhận <strong>10% giá trị đơn đầu tiên</strong> của khách đó.</p>
+        <div class="ref-link-box">
+          <span id="refLinkText">—</span>
+          <button class="btn btn-outline" onclick="copyReferralLink()">📋 Sao chép</button>
+        </div>
+        <div class="acc-points-big small">
+          <strong id="refBalance">0đ</strong><span>số dư hoa hồng</span>
+        </div>
+        <p class="hint">Nhận bằng <strong>tiền mặt</strong> (cộng dồn ≥ 100.000đ mới được rút) hoặc <strong>đổi sản phẩm</strong> trong mục Sản phẩm.</p>
+        <div class="acc-btn-row">
+          <button class="btn btn-outline" onclick="simulateReferralOrder()">🧪 Mô phỏng có khách mới</button>
+          <button class="btn btn-primary" onclick="withdrawReferral()">💵 Rút tiền mặt</button>
+        </div>
+        <div id="refHistoryList"></div>
+      </div>
+
+      <div class="acc-card">
+        <div class="acc-card-head"><span>🎖️ Gói hội viên</span></div>
+        <p class="hint" id="membershipStatus">Chưa là hội viên — đăng ký để giảm giá mọi sản phẩm & dịch vụ.</p>
+        <div class="member-plans" id="memberPlans"></div>
+      </div>
+
+      <div class="acc-card">
+        <div class="acc-card-head"><span>🧾 Lịch sử đơn</span></div>
+        <div id="orderHistoryList"></div>
+      </div>
+
+      <p class="center" style="margin-top:1.4rem">
+        <button class="btn btn-ghost" onclick="goTo('ktv')">🔧 Màn dành cho Kỹ thuật viên</button>
+      </p>
+    </section>
+
+    <!-- ============ KTV ============ -->
+    <section id="screen-ktv" class="screen">
+      <div class="ktv-tag">🔧 Màn dành cho KTV</div>
+      <h2>Ví Kỹ thuật viên</h2>
+      <p class="hint">KTV cần duy trì ví tối thiểu <strong>100.000đ</strong> mới được nhận việc. Mỗi ca hoàn thành, nền tảng giữ lại <strong>25%</strong> giá trị ca.</p>
+      <label class="field">Chọn KTV (demo nội bộ)
+        <select id="ktvSelect" onchange="loadKtv()"></select>
+      </label>
+      <div class="acc-card">
+        <div class="acc-points-big"><strong id="ktvBalance">0đ</strong><span>số dư ví</span></div>
+        <p class="hint" id="ktvWarning"></p>
+        <div class="acc-btn-row">
+          <button class="btn btn-outline" onclick="ktvTopUp(100000)">+100k</button>
+          <button class="btn btn-outline" onclick="ktvTopUp(200000)">+200k</button>
+          <button class="btn btn-outline" onclick="ktvTopUp(500000)">+500k</button>
+        </div>
+      </div>
+      <h3 class="subhead">Danh sách ca được phân</h3>
+      <div id="ktvJobList"></div>
+      <button class="btn btn-ghost btn-block" onclick="goTo('account')">← Về Tài khoản</button>
+    </section>
+
+  </main>
+  <div class="device-footer-space"></div>
+</div>
+
+<nav class="bottomnav hidden" id="bottomnav">
+  <button class="bn-item" id="bnHome" onclick="goTo('home')"><span class="bn-ic">🏠</span><span class="bn-label">Đặt lịch</span></button>
+  <button class="bn-item" id="bnProducts" onclick="goTo('products')"><span class="bn-ic">🛍️</span><span class="bn-label">Sản phẩm</span></button>
+  <button class="bn-item" id="bnAccount" onclick="goTo('account')"><span class="bn-ic">👤</span><span class="bn-label">Tài khoản</span></button>
+</nav>
+
+<div class="fab-group">
+  <a class="fab fab-zalo" href="https://zalo.me/0762419688" target="_blank" rel="noopener" aria-label="Chat Zalo">💬<span>Zalo</span></a>
+  <a class="fab fab-call" href="tel:0762419688" aria-label="Gọi hotline">📞<span>Gọi ngay</span></a>
+</div>
+
+<button class="install-fab hidden" id="installBtn" onclick="rtInstall()">⬇️ Cài ứng dụng</button>
+
+<div class="toast hidden" id="toast"></div>
+
+<!-- Hồ sơ KTV chi tiết -->
+<div class="modal-overlay hidden" id="techModal" onclick="closeTechModal(event)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" onclick="closeTechModal()" aria-label="Đóng">✕</button>
+    <div id="techModalBody"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+  // Đăng ký service worker (PWA)
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  }
+  // Nút "Cài ứng dụng" (Android/desktop Chrome)
+  var rtDeferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); rtDeferred = e;
+    var b = document.getElementById('installBtn'); if (b) b.classList.remove('hidden');
+  });
+  window.rtInstall = function () {
+    var b = document.getElementById('installBtn');
+    if (!rtDeferred) { if (b) b.classList.add('hidden'); return; }
+    rtDeferred.prompt();
+    rtDeferred.userChoice.finally(function () { rtDeferred = null; if (b) b.classList.add('hidden'); });
+  };
+  window.addEventListener('appinstalled', function () { var b = document.getElementById('installBtn'); if (b) b.classList.add('hidden'); });
+</script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# Cấu hình deploy lên Render.com (https://render.com)
+# Cách dùng: đẩy thư mục này lên GitHub -> Render "New +" -> "Blueprint" -> chọn repo.
+services:
+  - type: web
+    name: rumtran-khoe-dep
+    runtime: node
+    plan: free            # Gói miễn phí (ngủ sau 15' không dùng; dữ liệu SQLite KHÔNG bền trên gói free)
+    region: singapore     # Gần Việt Nam nhất
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 24.9.0
+      - key: ADMIN_KEY
+        sync: false       # Tự nhập khóa quản trị bí mật trong dashboard Render
+    # Muốn dữ liệu BỀN (đơn hàng không mất): nâng lên gói có phí rồi bật disk bên dưới,
+    # HOẶC chuyển sang Postgres (xem DEPLOY.md).
+    # disk:
+    #   name: rumtran-data
+    #   mountPath: /app/data
+    #   sizeGB: 1

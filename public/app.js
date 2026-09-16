@@ -132,6 +132,10 @@
     if (name === 'ktv') { renderKtvSelect(); loadKtv(); }
     if (name === 'ktv-register') { renderTechRegister(); }
 
+    // Ẩn thanh header (logo tròn) ở màn đăng nhập/đăng ký để không trùng với logo lớn
+    var brandbar = document.querySelector('.brandbar');
+    if (brandbar) brandbar.style.display = (name === 'login' || name === 'ktv-register') ? 'none' : '';
+
     updateBottomNav(name);
     var m = el('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0);
   }

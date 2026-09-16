@@ -59,6 +59,52 @@
         </label>
         <button class="btn btn-primary btn-block btn-lg" id="loginBtn" onclick="doLogin()">Đăng nhập / Đăng ký</button>
         <p class="muted small center" style="margin-top:.8rem">Bằng việc tiếp tục, Anh/Chị đồng ý cho chúng tôi lưu thông tin đặt lịch để phục vụ.</p>
+        <hr class="confirm-divider" style="margin:1.2rem 0">
+        <button class="btn btn-outline btn-block" onclick="goTo('ktv-register')">🧑‍⚕️ Bạn là kỹ thuật viên? Đăng ký tham gia</button>
+      </div>
+    </section>
+
+    <!-- ============ ĐĂNG KÝ KỸ THUẬT VIÊN ============ -->
+    <section id="screen-ktv-register" class="screen">
+      <div class="login-wrap">
+        <h2 class="center" style="color:var(--red)">🧑‍⚕️ Đăng ký làm Kỹ thuật viên</h2>
+        <p class="hint center">Điền thông tin để tham gia đội ngũ RUM TRẦN KHỎE ĐẸP. Hồ sơ sẽ được duyệt trước khi hiển thị cho khách.</p>
+        <div class="api-error" id="ktvRegError"></div>
+
+        <div class="ktv-photo-pick">
+          <div class="ktv-photo-preview" id="ktvPhotoPreview">Ảnh<br>của bạn</div>
+          <label class="btn btn-outline">📷 Chọn ảnh
+            <input id="ktvPhotoInput" type="file" accept="image/*" onchange="onKtvPhoto(event)" hidden />
+          </label>
+        </div>
+
+        <label class="field">Họ tên
+          <input id="ktvName" type="text" placeholder="VD: Chị Nguyễn Thị Hoa" />
+        </label>
+        <label class="field">Số điện thoại
+          <input id="ktvPhone" type="tel" inputmode="numeric" placeholder="VD: 0901 234 567" />
+        </label>
+        <label class="field">Giới tính
+          <select id="ktvGender">
+            <option value="nu">Nữ</option>
+            <option value="nam">Nam</option>
+          </select>
+        </label>
+        <label class="field">Khu vực phục vụ
+          <select id="ktvArea"></select>
+        </label>
+        <label class="field">Số năm kinh nghiệm
+          <input id="ktvYears" type="number" min="0" max="60" placeholder="VD: 5" />
+        </label>
+        <label class="field">Chuyên môn / kỹ năng <small>(cách nhau bởi dấu phẩy)</small>
+          <input id="ktvSkills" type="text" placeholder="VD: Dưỡng sinh, Bấm huyệt, Thư giãn" />
+        </label>
+        <label class="field">Giới thiệu bản thân
+          <textarea id="ktvBio" rows="3" placeholder="Vài dòng về kinh nghiệm, phong cách làm việc của bạn..."></textarea>
+        </label>
+
+        <button class="btn btn-primary btn-block btn-lg" id="ktvRegBtn" onclick="submitTechApplication()">Gửi đăng ký</button>
+        <button class="btn btn-ghost btn-block" onclick="goTo('login')">← Quay lại đăng nhập</button>
       </div>
     </section>
 

@@ -11,15 +11,51 @@ const {
 } = require('./data');
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: '6mb' })); // cho phép tải ảnh KTV (base64)
 
 /* ---------------- Tiện ích ---------------- */
 const findService = (id) => SERVICES.find((s) => s.id === id) || null;
 const findAddon = (id) => ADDONS.find((a) => a.id === id) || null;
 const findProduct = (id) => PRODUCTS.find((p) => p.id === id) || null;
 const findPlan = (id) => MEMBERSHIP_PLANS.find((p) => p.id === id) || null;
-const findTech = (id) => TECHS.find((t) => t.id === Number(id)) || null;
-const nearestTech = () => TECHS.reduce((best, t) => (t.distance < best.distance ? t : best), TECHS[0]);
+// ---- Kỹ thuật viên: nguồn dữ liệu là CSDL (seed 5 KTV mẫu, cộng KTV đăng ký mới đã duyệt) ----
+function techRow(r) {
+  if (!r) return null;
+  return {
+    id: r.id, name: r.name, initials: r.initials, gender: r.gender, area: r.area,
+    rating: r.rating, reviews: r.reviews, distance: r.distance, years: r.years, soonest: r.soonest,
+    certs: JSON.parse(r.certs_json || '[]'), sampleReviews: JSON.parse(r.sample_reviews_json || '[]'),
+    bio: r.bio || '', photo: r.photo || null,
+  };
+}
+function getApprovedTechs() {
+  return db.prepare("SELECT * FROM technicians WHERE status='approved' ORDER BY id").all().map(techRow);
+}
+const findTech = (id) => techRow(db.prepare('SELECT * FROM technicians WHERE id = ?').get(Number(id)));
+function nearestTech() {
+  const list = getApprovedTechs();
+  if (!list.length) return null;
+  return list.reduce((best, t) => ((t.distance == null ? 999 : t.distance) < (best.distance == null ? 999 : best.distance) ? t : best), list[0]);
+}
+function seedTechnicians() {
+  const n = db.prepare('SELECT COUNT(*) AS c FROM technicians').get().c;
+  if (n > 0) return;
+  const ins = db.prepare(`INSERT INTO technicians
+    (name, initials, gender, area, rating, reviews, distance, years, soonest, certs_json, sample_reviews_json, bio, photo, status, created_at)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'approved',?)`);
+  TECHS.forEach((t) => ins.run(
+    t.name, t.initials, t.gender, t.area, t.rating, t.reviews, t.distance, t.years, t.soonest,
+    JSON.stringify(t.certs || []), JSON.stringify(t.sampleReviews || []), t.bio || '', null, Date.now()
+  ));
+}
+seedTechnicians();
+
+function makeInitials(name) {
+  const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'KT';
+  const last = parts.slice(-2).map((w) => w[0].toUpperCase()).join('');
+  return last || 'KT';
+}
 
 function base36(n) { return n.toString(36).toUpperCase(); }
 function genCode(prefix) { return prefix + base36(Date.now()).slice(-6) + Math.floor(Math.random() * 90 + 10); }
@@ -109,10 +145,32 @@ app.get('/api/catalog', (_req, res) => {
   res.json({
     services: SERVICES, addons: ADDONS,
     products: PRODUCTS.map(productWithPoints),
-    membershipPlans: MEMBERSHIP_PLANS, techs: TECHS, statuses: STATUSES,
+    membershipPlans: MEMBERSHIP_PLANS, techs: getApprovedTechs(), statuses: STATUSES,
     areas: CONFIG.areas,
     config: { pointRate: CONFIG.pointRate, referralPct: CONFIG.referralPct, ktvPlatformFee: CONFIG.ktvPlatformFee, ktvMinBalance: CONFIG.ktvMinBalance, brand: CONFIG.brand },
   });
+});
+
+/* ---------------- Kỹ thuật viên đăng ký tham gia (công khai) ---------------- */
+app.post('/api/technicians/apply', (req, res) => {
+  const name = String(req.body.name || '').trim();
+  const phone = String(req.body.phone || '').trim();
+  const gender = req.body.gender === 'nam' ? 'nam' : 'nu';
+  const area = String(req.body.area || '').trim();
+  const years = Math.max(0, Math.min(60, parseInt(req.body.years, 10) || 0));
+  const bio = String(req.body.bio || '').trim().slice(0, 500);
+  const skills = String(req.body.skills || '').trim();
+  const photo = typeof req.body.photo === 'string' && req.body.photo.startsWith('data:image') ? req.body.photo.slice(0, 4000000) : null;
+  if (name.length < 2) return res.status(400).json({ error: 'Vui lòng nhập họ tên' });
+  if (phone.replace(/\D/g, '').length < 9) return res.status(400).json({ error: 'Số điện thoại không hợp lệ' });
+  if (!area) return res.status(400).json({ error: 'Vui lòng chọn khu vực' });
+  const certs = skills ? skills.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean).slice(0, 4) : ['Chuyên dưỡng sinh · chăm sóc sức khỏe'];
+  db.prepare(`INSERT INTO technicians
+    (name, initials, gender, area, rating, reviews, distance, years, soonest, certs_json, sample_reviews_json, bio, photo, status, created_at)
+    VALUES (?,?,?,?,5.0,0,?,?,?,?,'[]',?,?,'pending',?)`)
+    .run(name, makeInitials(name), gender, area, 2.0, years, 'Theo lịch hẹn',
+      JSON.stringify(certs), bio, photo, Date.now());
+  res.json({ ok: true });
 });
 
 /* ---------------- Hồ sơ của tôi (điểm, hội viên, hoa hồng, lịch sử) ---------------- */
@@ -395,7 +453,25 @@ app.get('/api/admin/bookings', authAdmin, (req, res) => {
     hoanThanh: rows.filter((b) => b.status_idx >= STATUSES.length - 1).length,
     doanhThu: rows.reduce((s, b) => s + b.total, 0),
   };
-  res.json({ bookings: list, stats, techs: TECHS, statuses: STATUSES });
+  res.json({ bookings: list, stats, techs: getApprovedTechs(), statuses: STATUSES });
+});
+
+// Duyệt kỹ thuật viên đăng ký
+app.get('/api/admin/technicians', authAdmin, (req, res) => {
+  const rows = db.prepare('SELECT * FROM technicians ORDER BY (status=\'pending\') DESC, created_at DESC').all().map((r) => {
+    const t = techRow(r); t.status = r.status; t.phone = r.phone; return t;
+  });
+  res.json({ technicians: rows, pending: rows.filter((t) => t.status === 'pending').length });
+});
+app.post('/api/admin/technicians/:id/approve', authAdmin, (req, res) => {
+  const info = db.prepare("UPDATE technicians SET status='approved' WHERE id=?").run(Number(req.params.id));
+  if (!info.changes) return res.status(404).json({ error: 'Không tìm thấy KTV' });
+  res.json({ ok: true });
+});
+app.post('/api/admin/technicians/:id/reject', authAdmin, (req, res) => {
+  const info = db.prepare("UPDATE technicians SET status='rejected' WHERE id=?").run(Number(req.params.id));
+  if (!info.changes) return res.status(404).json({ error: 'Không tìm thấy KTV' });
+  res.json({ ok: true });
 });
 
 app.post('/api/admin/bookings/:code/assign', authAdmin, (req, res) => {

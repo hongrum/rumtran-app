@@ -625,3 +625,18 @@ h2{font-size:1.25rem;font-weight:800;margin-bottom:.3rem}
   box-shadow:var(--shadow-sm);border:1px solid var(--line);
 }
 .login-logo-img{display:block;width:220px;max-width:72%;margin:0 auto .2rem}
+
+/* ===== Ảnh kỹ thuật viên (như Glow) ===== */
+.tech-avatar.has-photo{background-size:cover;background-position:center;color:transparent;overflow:hidden}
+.ktv-photo-pick{display:flex;flex-direction:column;align-items:center;gap:.6rem;margin:.4rem 0 1rem}
+.ktv-photo-preview{
+  width:120px;height:120px;border-radius:50%;background:var(--surface-2);
+  border:2px dashed var(--gold);display:flex;align-items:center;justify-content:center;
+  text-align:center;font-size:.78rem;color:var(--gold-d);font-weight:800;line-height:1.2;
+  background-size:cover;background-position:center;
+}
+.ktv-photo-preview.has-photo{border-style:solid;color:transparent}
+#screen-ktv-register select,#screen-ktv-register .field select{
+  display:block;width:100%;margin-top:.4rem;border:2px solid var(--line);border-radius:12px;
+  background:var(--surface);padding:.75rem .8rem;color:var(--text);font-size:1rem;
+}

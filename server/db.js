@@ -95,6 +95,28 @@ CREATE TABLE IF NOT EXISTS ktv_jobs (
   status    TEXT NOT NULL DEFAULT 'pending'
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_tech ON ktv_jobs(tech_id);
+
+-- Kỹ thuật viên (đăng ký + duyệt, có ẢNH thật, lọc theo khu vực như Glow)
+CREATE TABLE IF NOT EXISTS technicians (
+  id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+  name                TEXT NOT NULL,
+  phone               TEXT,
+  initials            TEXT,
+  gender              TEXT DEFAULT 'nu',
+  area                TEXT,
+  rating              REAL NOT NULL DEFAULT 5.0,
+  reviews             INTEGER NOT NULL DEFAULT 0,
+  distance            REAL,
+  years               INTEGER NOT NULL DEFAULT 0,
+  soonest             TEXT,
+  certs_json          TEXT NOT NULL DEFAULT '[]',
+  sample_reviews_json TEXT NOT NULL DEFAULT '[]',
+  bio                 TEXT,
+  photo               TEXT,
+  status              TEXT NOT NULL DEFAULT 'approved',
+  created_at          INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_tech_status ON technicians(status);
 `);
 
 /* ---- Migration nhẹ: thêm cột mới cho tính năng "đặt hộ người thân" ---- */

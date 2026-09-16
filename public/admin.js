@@ -24,7 +24,33 @@
   function adminLogout() { localStorage.removeItem(KEY); location.reload(); }
   window.adminLogout = adminLogout;
 
-  function showApp() { el('adminLogin').classList.add('hidden'); el('adminApp').classList.remove('hidden'); loadBookings(); }
+  function showApp() { el('adminLogin').classList.add('hidden'); el('adminApp').classList.remove('hidden'); loadBookings(); loadTechnicians(); }
+
+  function loadTechnicians() {
+    api('/api/admin/technicians').then(function (res) {
+      el('ktvList').innerHTML = res.technicians.map(techCardHtml).join('') || '<p style="color:#7b6857">Chưa có KTV.</p>';
+    }).catch(function () {});
+  }
+  window.loadTechnicians = loadTechnicians;
+  function techCardHtml(t) {
+    var av = t.photo ? '<span class="adm-ava" style="background-image:url(' + t.photo + ')"></span>'
+      : '<span class="adm-ava adm-ava-txt">' + esc(t.initials || 'KT') + '</span>';
+    var badge = t.status === 'pending' ? '<span class="status-pill">⏳ Chờ duyệt</span>'
+      : (t.status === 'approved' ? '<span class="status-pill done">✔ Đang hiển thị</span>' : '<span class="status-pill">✖ Đã ẩn</span>');
+    var actions = t.status === 'pending'
+      ? '<button class="btn btn-primary" onclick="approveTech(' + t.id + ')">✔ Duyệt</button> <button class="btn btn-ghost" onclick="rejectTech(' + t.id + ')">Từ chối</button>'
+      : (t.status === 'approved' ? '<button class="btn btn-ghost" onclick="rejectTech(' + t.id + ')">Ẩn</button>' : '<button class="btn btn-outline" onclick="approveTech(' + t.id + ')">Duyệt lại</button>');
+    return '<div class="adm-ktv">' + av + '<div class="adm-ktv-info">' +
+      '<div><strong>' + esc(t.name) + '</strong> · ' + (t.gender === 'nam' ? 'Nam' : 'Nữ') + ' · 📍 ' + esc(t.area || '') + '</div>' +
+      '<div style="font-size:.8rem;color:#7b6857">' + esc(t.phone || '') + ' · ' + t.years + ' năm KN · ' + esc((t.certs || []).join(', ')) + '</div>' +
+      (t.bio ? '<div style="font-size:.8rem;margin-top:.2rem">' + esc(t.bio) + '</div>' : '') +
+      '<div style="margin-top:.4rem">' + badge + '</div></div>' +
+      '<div class="adm-ktv-act">' + actions + '</div></div>';
+  }
+  function approveTech(id) { api('/api/admin/technicians/' + id + '/approve', 'POST').then(function () { loadTechnicians(); loadBookings(); }).catch(function (e) { alert(e.message); }); }
+  function rejectTech(id) { api('/api/admin/technicians/' + id + '/reject', 'POST').then(function () { loadTechnicians(); }).catch(function (e) { alert(e.message); }); }
+  window.approveTech = approveTech;
+  window.rejectTech = rejectTech;
 
   function loadBookings() {
     api('/api/admin/bookings').then(function (res) {

@@ -86,8 +86,9 @@
   var TABS = ['home', 'products', 'account'];
   var current = 'login';
 
+  var OPEN_SCREENS = ['login', 'ktv-register']; // xem được khi CHƯA đăng nhập
   function goTo(screen) {
-    if (!user && screen !== 'login') { screen = 'login'; }
+    if (!user && OPEN_SCREENS.indexOf(screen) < 0) { screen = 'login'; }
     current = screen;
     showScreen(screen);
   }
@@ -129,6 +130,7 @@
     if (name === 'products') { renderProducts(); }
     if (name === 'account') { loadAccount(); }
     if (name === 'ktv') { renderKtvSelect(); loadKtv(); }
+    if (name === 'ktv-register') { renderTechRegister(); }
 
     updateBottomNav(name);
     var m = el('main'); if (m) m.scrollTop = 0; window.scrollTo(0, 0);
@@ -280,7 +282,12 @@
 
   /* ---------------- BƯỚC 2: KTV ---------------- */
   var TECH_COLORS = ['#d81f26', '#c8912f', '#8a5a2e', '#b0141b', '#a97722'];
-  function techColor(t) { return TECH_COLORS[CATALOG.techs.indexOf(t) % TECH_COLORS.length]; }
+  function techColor(t) { var i = CATALOG.techs.indexOf(t); return TECH_COLORS[(i < 0 ? (t.id || 0) : i) % TECH_COLORS.length]; }
+  function avatarHtml(t, extraClass) {
+    extraClass = extraClass || '';
+    if (t.photo) return '<span class="tech-avatar ' + extraClass + ' has-photo" style="background-image:url(' + t.photo + ')"></span>';
+    return '<span class="tech-avatar ' + extraClass + '" style="background:' + techColor(t) + '">' + escapeHtml(t.initials || 'KT') + '</span>';
+  }
   function fillAreaFilter() {
     var sel = el('filterArea'); if (!sel || sel.dataset.filled) return;
     (CATALOG.areas || []).forEach(function (a) { var o = document.createElement('option'); o.value = a; o.textContent = '📍 ' + a; sel.appendChild(o); });
@@ -296,7 +303,7 @@
       var sel = flow.techId === t.id;
       var badges = (t.certs || []).map(function (c) { return '<span class="badge-pill">✔ ' + escapeHtml(c) + '</span>'; }).join('');
       return '<div class="tech-item' + (sel ? ' selected' : '') + '" onclick="selectTech(' + t.id + ')">' +
-        '<span class="tech-avatar" style="background:' + techColor(t) + '">' + t.initials + '</span>' +
+        avatarHtml(t) +
         '<div class="tech-info"><div class="tech-name">' + escapeHtml(t.name) + ' <small style="color:var(--muted);font-weight:600">· ' + (t.gender === 'nam' ? 'Nam' : 'Nữ') + '</small></div>' +
         '<div class="tech-meta">⭐ ' + t.rating.toFixed(1) + ' (' + t.reviews + ' đánh giá) · 📍 ' + escapeHtml(t.area) + ' · ' + t.years + ' năm KN</div>' +
         '<div class="tech-badges">' + badges + '</div>' +
@@ -313,7 +320,7 @@
     }).join('') || '<p class="hint">Chưa có đánh giá mẫu.</p>';
     var badges = (t.certs || []).map(function (c) { return '<span class="badge-pill">✔ ' + escapeHtml(c) + '</span>'; }).join('');
     el('techModalBody').innerHTML =
-      '<div class="modal-head"><span class="tech-avatar" style="background:' + techColor(t) + '">' + t.initials + '</span>' +
+      '<div class="modal-head">' + avatarHtml(t) +
       '<div><div class="tech-name">' + escapeHtml(t.name) + '</div>' +
       '<div class="tech-meta">⭐ ' + t.rating.toFixed(1) + ' (' + t.reviews + ' đánh giá) · ' + (t.gender === 'nam' ? 'Nam' : 'Nữ') + ' · 📍 ' + escapeHtml(t.area) + '</div></div></div>' +
       '<div class="tech-badges">' + badges + '</div>' +
@@ -481,8 +488,7 @@
     }).join('');
     var t = b.tech;
     if (t) {
-      var color = TECH_COLORS[(findTech(t.id) ? CATALOG.techs.indexOf(findTech(t.id)) : 0) % TECH_COLORS.length];
-      el('trackingTechCard').innerHTML = '<span class="tech-avatar" style="background:' + color + '">' + t.initials + '</span>' +
+      el('trackingTechCard').innerHTML = avatarHtml(t) +
         '<div class="tc-info"><div class="tc-name">' + escapeHtml(t.name) + '</div><div class="tc-meta">⭐ ' + t.rating.toFixed(1) + ' · ✔ Kỹ thuật viên tận tâm, giàu kinh nghiệm</div></div>' +
         '<a class="btn btn-outline" href="tel:0762419688">📞 Hỗ trợ</a>';
     }
@@ -722,6 +728,58 @@
   window.ktvTopUp = ktvTopUp;
   function ktvComplete(jobId) { api('/api/ktv/' + ktvId + '/jobs/' + jobId + '/complete', 'POST').then(function (res) { loadKtv(); if (res.fee != null) toast('Hoàn thành ca! Nền tảng giữ ' + money(res.fee) + ', KTV nhận ' + money(res.net)); }).catch(function (e) { toast(e.message); }); }
   window.ktvComplete = ktvComplete;
+
+  /* ---------------- ĐĂNG KÝ KỸ THUẬT VIÊN ---------------- */
+  var ktvPhotoData = null;
+  function renderTechRegister() {
+    var sel = el('ktvArea');
+    if (sel && !sel.dataset.filled) {
+      sel.innerHTML = '<option value="">— Chọn khu vực —</option>' + (CATALOG.areas || []).map(function (a) { return '<option value="' + escapeHtml(a) + '">' + escapeHtml(a) + '</option>'; }).join('');
+      sel.dataset.filled = '1';
+    }
+  }
+  function onKtvPhoto(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        // Thu nhỏ ảnh về tối đa 400px cho nhẹ, xuất JPEG
+        var max = 400, w = img.width, h = img.height;
+        if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
+        else if (h > max) { w = Math.round(w * max / h); h = max; }
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        ktvPhotoData = c.toDataURL('image/jpeg', 0.82);
+        var prev = el('ktvPhotoPreview');
+        prev.innerHTML = ''; prev.style.backgroundImage = 'url(' + ktvPhotoData + ')';
+        prev.classList.add('has-photo');
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  window.onKtvPhoto = onKtvPhoto;
+  function submitTechApplication() {
+    var body = {
+      name: el('ktvName').value.trim(), phone: el('ktvPhone').value.trim(),
+      gender: el('ktvGender').value, area: el('ktvArea').value,
+      years: el('ktvYears').value, skills: el('ktvSkills').value.trim(),
+      bio: el('ktvBio').value.trim(), photo: ktvPhotoData,
+    };
+    if (body.name.length < 2) { showErr('ktvRegError', 'Vui lòng nhập họ tên'); return; }
+    if (body.phone.replace(/\D/g, '').length < 9) { showErr('ktvRegError', 'Số điện thoại chưa hợp lệ'); return; }
+    if (!body.area) { showErr('ktvRegError', 'Vui lòng chọn khu vực'); return; }
+    el('ktvRegBtn').disabled = true;
+    api('/api/technicians/apply', 'POST', body).then(function () {
+      el('ktvRegBtn').disabled = false;
+      ktvPhotoData = null;
+      alert('Cảm ơn bạn đã đăng ký! Hồ sơ đang chờ RUM TRẦN duyệt. Chúng tôi sẽ liên hệ sớm.');
+      goTo('login');
+    }).catch(function (e) { el('ktvRegBtn').disabled = false; showErr('ktvRegError', e.message); });
+  }
+  window.submitTechApplication = submitTechApplication;
 
   /* ---------------- KHỞI ĐỘNG ---------------- */
   function captureRef() {

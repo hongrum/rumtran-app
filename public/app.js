@@ -175,13 +175,17 @@
     var phone = el('loginPhone').value.trim();
     if (phone.replace(/\D/g, '').length < 9) { showErr('loginError', 'Số điện thoại chưa hợp lệ'); return; }
     el('loginBtn').disabled = true;
-    api('/api/auth/login', 'POST', { phone: phone, name: name }).then(function (res) {
+    var ref = localStorage.getItem('rt_ref') || '';
+    api('/api/auth/login', 'POST', { phone: phone, name: name, ref: ref }).then(function (res) {
       localStorage.setItem(TOKEN_KEY, res.token);
+      localStorage.removeItem('rt_ref'); // mã giới thiệu đã dùng khi đăng ký
       setUser(res.user);
       flow.custName = user.name || ''; flow.custPhone = user.phone || ''; saveFlow();
       el('loginBtn').disabled = false;
       goTo('home');
       toast('Xin chào ' + (user.name || 'Anh/Chị') + '!');
+      // CHỈ khi ĐĂNG KÝ MỚI lần đầu → tự mở bảng mời chia sẻ link giới thiệu (khách cũ không bị làm phiền)
+      if (res.isNew) { setTimeout(openShareModal, 700); }
     }).catch(function (e) { el('loginBtn').disabled = false; showErr('loginError', e.message); });
   }
   window.doLogin = doLogin;
@@ -606,7 +610,7 @@
       setUser(res.user);
       el('accountGreeting').textContent = user.name ? ('Xin chào ' + user.name + ' — quản lý điểm thưởng, giới thiệu và hội viên tại đây.') : 'Quản lý điểm thưởng, giới thiệu bạn bè và hội viên tại đây.';
       el('accPoints').textContent = user.loyaltyPoints;
-      el('refLinkText').textContent = 'https://rumtrankhoedep.store/?ref=' + user.referral.code;
+      el('refLinkText').textContent = referralLink();
       el('refBalance').textContent = money(user.referral.balance);
       var hist = res.referralHistory.slice(0, 5).map(function (h) { var s = h.amount >= 0 ? '+' : ''; return '<div class="confirm-line"><span class="l">' + escapeHtml(h.note) + '</span><span class="r">' + s + money(h.amount) + '</span></div>'; }).join('');
       el('refHistoryList').innerHTML = hist ? ('<hr class="confirm-divider">' + hist) : '';
@@ -614,12 +618,45 @@
       renderOrderHistory(res);
     }).catch(function (e) { el('accountGreeting').textContent = 'Lỗi tải tài khoản: ' + e.message; });
   }
-  function copyReferralLink() {
-    var text = el('refLinkText').textContent;
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast('Đã sao chép link giới thiệu'); }).catch(function () { toast('Không sao chép được — vui lòng copy thủ công'); });
-    else toast('Vui lòng copy thủ công');
+  /* ---- Link giới thiệu (dùng đúng địa chỉ app đang chạy) ---- */
+  function referralBase() { return (window.location.origin || 'https://rumtran-app.onrender.com').replace(/\/$/, ''); }
+  function referralLink() { return referralBase() + '/?ref=' + (user && user.referral ? user.referral.code : ''); }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).then(function () { toast('Đã sao chép link giới thiệu'); }).catch(function () { toast('Không sao chép được — vui lòng copy thủ công'); });
+    }
+    toast('Vui lòng copy thủ công'); return Promise.resolve();
   }
+  function copyReferralLink() { copyText(referralLink()); }
   window.copyReferralLink = copyReferralLink;
+
+  /* ---- Bảng "Chia sẻ link giới thiệu" ---- */
+  function openShareModal() {
+    if (!user) { goTo('login'); return; }
+    var link = referralLink();
+    el('shareModalBody').innerHTML =
+      '<div class="share-head"><div class="share-emoji">🎁</div><h2>Giới thiệu bạn bè — Nhận 10%</h2>' +
+      '<p class="hint center">Gửi link riêng của Anh/Chị cho bạn bè. Khi bạn ấy đăng ký và <strong>đặt đơn đầu tiên</strong>, Anh/Chị nhận <strong>10% giá trị đơn đó</strong> vào số dư hoa hồng.</p></div>' +
+      '<div class="ref-link-box"><span id="shareLinkText">' + escapeHtml(link) + '</span>' +
+      '<button class="btn btn-outline" onclick="copyReferralLink()">📋 Sao chép</button></div>' +
+      '<button class="btn btn-primary btn-block btn-lg" onclick="shareReferral()">📤 Chia sẻ ngay (Zalo, Messenger...)</button>' +
+      '<button class="btn btn-ghost btn-block" onclick="closeShareModal()">Để sau</button>';
+    el('shareModal').classList.remove('hidden');
+  }
+  window.openShareModal = openShareModal;
+  function closeShareModal(e) { if (e && e.target && e.target.closest && e.target.closest('.modal-card') && e.type === 'click') return; el('shareModal').classList.add('hidden'); }
+  window.closeShareModal = closeShareModal;
+  function shareReferral() {
+    var link = referralLink();
+    var text = 'Mình dùng RUM TRẦN KHỎE ĐẸP — dưỡng sinh, chăm sóc sức khỏe tận nhà, 350k trọn gói không phát sinh. Đăng ký qua link này nhé: ';
+    if (navigator.share) {
+      navigator.share({ title: 'RUM TRẦN KHỎE ĐẸP', text: text, url: link }).catch(function () {});
+    } else {
+      copyText(text + link).then(function () { toast('Đã sao chép lời mời — dán vào Zalo/Facebook để gửi'); });
+    }
+  }
+  window.shareReferral = shareReferral;
   function simulateReferralOrder() { api('/api/referral/simulate', 'POST').then(function (res) { setUser(res.user); loadAccount(); toast('Có khách mới qua link! +' + money(res.commission) + ' hoa hồng'); }).catch(function (e) { toast(e.message); }); }
   window.simulateReferralOrder = simulateReferralOrder;
   function withdrawReferral() {
@@ -687,7 +724,17 @@
   window.ktvComplete = ktvComplete;
 
   /* ---------------- KHỞI ĐỘNG ---------------- */
+  function captureRef() {
+    try {
+      var r = new URLSearchParams(window.location.search).get('ref');
+      if (r) {
+        localStorage.setItem('rt_ref', r);
+        window.history.replaceState({}, document.title, window.location.pathname); // dọn URL cho sạch
+      }
+    } catch (e) {}
+  }
   function boot() {
+    captureRef();
     loadFlow();
     api('/api/catalog').then(function (cat) {
       CATALOG = cat;

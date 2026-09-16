@@ -108,4 +108,8 @@ ensureColumn('bookings', 'booking_for', "booking_for TEXT NOT NULL DEFAULT 'self
 ensureColumn('bookings', 'patient_name', 'patient_name TEXT');
 ensureColumn('bookings', 'relation', 'relation TEXT');
 
+// Giới thiệu THẬT: ai giới thiệu người này + đã cộng hoa hồng đơn đầu chưa
+ensureColumn('users', 'referred_by', 'referred_by INTEGER');
+ensureColumn('users', 'first_order_credited', 'first_order_credited INTEGER NOT NULL DEFAULT 0');
+
 module.exports = db;

@@ -79,19 +79,29 @@ function authUser(req, res, next) {
 app.post('/api/auth/login', (req, res) => {
   const phone = String(req.body.phone || '').trim();
   const name = String(req.body.name || '').trim();
+  const ref = String(req.body.ref || '').trim();
   if (phone.replace(/\D/g, '').length < 9) return res.status(400).json({ error: 'Số điện thoại không hợp lệ' });
   let u = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
+  let isNew = false;
   if (!u) {
+    isNew = true;
     const info = db.prepare('INSERT INTO users (phone, name, created_at) VALUES (?,?,?)')
       .run(phone, name, Date.now());
     u = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
+    // Ghi nhận người giới thiệu (nếu đăng ký qua link ?ref=CODE hợp lệ, không tự giới thiệu mình)
+    if (ref) {
+      const referrer = db.prepare('SELECT id FROM users WHERE referral_code = ?').get(ref);
+      if (referrer && referrer.id !== u.id) {
+        db.prepare('UPDATE users SET referred_by = ? WHERE id = ?').run(referrer.id, u.id);
+      }
+    }
   } else if (name && name !== u.name) {
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, u.id);
     u.name = name;
   }
   ensureReferralCode(u);
   u = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);
-  res.json({ token: String(u.id), user: publicUser(u) });
+  res.json({ token: String(u.id), user: publicUser(u), isNew: isNew });
 });
 
 /* ---------------- Catalog (danh mục công khai) ---------------- */
@@ -173,6 +183,18 @@ app.post('/api/bookings', authUser, (req, res) => {
   // Tích điểm: 10.000đ = 1 điểm (trên giá sau giảm hội viên)
   const earned = Math.floor(total / CONFIG.pointRate);
   if (earned > 0) addPoints(u.id, earned, 'Đặt lịch dịch vụ #' + code);
+
+  // Hoa hồng giới thiệu THẬT: khách được giới thiệu đặt ĐƠN ĐẦU TIÊN → cộng 10% cho người giới thiệu
+  if (u.referred_by && !u.first_order_credited) {
+    const referrer = db.prepare('SELECT id FROM users WHERE id = ?').get(u.referred_by);
+    if (referrer) {
+      const commission = Math.round(total * CONFIG.referralPct);
+      db.prepare('UPDATE users SET referral_balance = referral_balance + ? WHERE id = ?').run(commission, referrer.id);
+      db.prepare('INSERT INTO referral_history (user_id, ts, amount, note) VALUES (?,?,?,?)')
+        .run(referrer.id, Date.now(), commission, 'Khách được giới thiệu (' + (u.name || u.phone) + ') đặt đơn đầu #' + code + ' (10%)');
+    }
+    db.prepare('UPDATE users SET first_order_credited = 1 WHERE id = ?').run(u.id);
+  }
 
   const booking = rowBooking(db.prepare('SELECT * FROM bookings WHERE code = ?').get(code));
   const fresh = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);

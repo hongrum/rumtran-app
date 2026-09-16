@@ -600,3 +600,20 @@ h2{font-size:1.25rem;font-weight:800;margin-bottom:.3rem}
   background:var(--gold);color:#fff;font-weight:800;font-size:.84rem;
   border-radius:999px;padding:.7rem 1rem;box-shadow:0 8px 22px rgba(40,20,5,.28)}
 .install-fab.hidden{display:none}
+
+/* ===== Nút "Giới thiệu bạn bè" ở trang chủ ===== */
+.ref-cta{display:flex;align-items:center;gap:.7rem;width:100%;text-align:left;cursor:pointer;
+  border:none;margin:1rem 0 .4rem;padding:.85rem 1rem;border-radius:16px;
+  background:linear-gradient(90deg,var(--gold),var(--gold-l));color:#fff;
+  box-shadow:var(--shadow-sm);font-family:inherit;-webkit-tap-highlight-color:transparent}
+.ref-cta:active{transform:scale(.99)}
+.ref-cta-ic{font-size:1.6rem;flex:none}
+.ref-cta-text{flex:1;min-width:0;display:flex;flex-direction:column}
+.ref-cta-text strong{font-size:.95rem;font-weight:800}
+.ref-cta-text small{font-size:.74rem;opacity:.95}
+.ref-cta-arrow{font-size:1.6rem;font-weight:800;flex:none}
+
+/* ===== Bảng chia sẻ ===== */
+.share-head{text-align:center;margin-bottom:.4rem}
+.share-emoji{font-size:2.6rem}
+.share-head h2{color:var(--red);margin:.2rem 0}

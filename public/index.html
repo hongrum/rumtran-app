@@ -95,6 +95,12 @@
         <div class="trust-badge">✔ <span>Chuyên dưỡng sinh, thư giãn — lành mạnh, an toàn</span></div>
       </div>
 
+      <button class="ref-cta" onclick="openShareModal()">
+        <span class="ref-cta-ic">🎁</span>
+        <span class="ref-cta-text"><strong>Giới thiệu bạn bè — Nhận 10%</strong><small>Mời bạn đăng ký, nhận 10% đơn đầu tiên của bạn ấy</small></span>
+        <span class="ref-cta-arrow">›</span>
+      </button>
+
       <h2 class="section-title">Dịch vụ của RUM TRẦN</h2>
       <p class="hint center">Chạm vào 1 dịch vụ để bắt đầu đặt lịch</p>
       <div class="svc-grid" id="homeServiceGrid"></div>
@@ -399,6 +405,14 @@
 <button class="install-fab hidden" id="installBtn" onclick="rtInstall()">⬇️ Cài ứng dụng</button>
 
 <div class="toast hidden" id="toast"></div>
+
+<!-- Bảng chia sẻ link giới thiệu -->
+<div class="modal-overlay hidden" id="shareModal" onclick="closeShareModal(event)">
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" onclick="closeShareModal()" aria-label="Đóng">✕</button>
+    <div id="shareModalBody"></div>
+  </div>
+</div>
 
 <!-- Hồ sơ KTV chi tiết -->
 <div class="modal-overlay hidden" id="techModal" onclick="closeTechModal(event)">

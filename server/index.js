@@ -11,7 +11,7 @@ const {
 } = require('./data');
 
 const app = express();
-app.use(express.json({ limit: '6mb' })); // cho phép tải ảnh KTV (base64)
+app.use(express.json({ limit: '10mb' })); // cho phép tải ảnh KTV + chứng chỉ + CCCD (base64)
 
 /* ---------------- Tiện ích ---------------- */
 const findService = (id) => SERVICES.find((s) => s.id === id) || null;
@@ -160,16 +160,23 @@ app.post('/api/technicians/apply', (req, res) => {
   const years = Math.max(0, Math.min(60, parseInt(req.body.years, 10) || 0));
   const bio = String(req.body.bio || '').trim().slice(0, 500);
   const skills = String(req.body.skills || '').trim();
-  const photo = typeof req.body.photo === 'string' && req.body.photo.startsWith('data:image') ? req.body.photo.slice(0, 4000000) : null;
+  // Ảnh: chỉ nhận data URL base64 sạch (không lọt ký tự lạ vào thuộc tính HTML). Hỏng/quá lớn thì bỏ, không cắt cụt.
+  const docImg = (v) => (typeof v === 'string' && v.length <= 1500000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(v) ? v : null);
+  const photo = docImg(req.body.photo);
+  const certPhotos = (Array.isArray(req.body.certPhotos) ? req.body.certPhotos : []).map(docImg).filter(Boolean).slice(0, 3);
+  const cccdFront = docImg(req.body.cccdFront);
+  const cccdBack = docImg(req.body.cccdBack);
   if (name.length < 2) return res.status(400).json({ error: 'Vui lòng nhập họ tên' });
   if (phone.replace(/\D/g, '').length < 9) return res.status(400).json({ error: 'Số điện thoại không hợp lệ' });
   if (!area) return res.status(400).json({ error: 'Vui lòng chọn khu vực' });
+  if (!cccdFront || !cccdBack) return res.status(400).json({ error: 'Vui lòng tải ảnh CCCD đủ 2 mặt' });
   const certs = skills ? skills.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean).slice(0, 4) : ['Chuyên dưỡng sinh · chăm sóc sức khỏe'];
   db.prepare(`INSERT INTO technicians
-    (name, initials, gender, area, rating, reviews, distance, years, soonest, certs_json, sample_reviews_json, bio, photo, status, created_at)
-    VALUES (?,?,?,?,5.0,0,?,?,?,?,'[]',?,?,'pending',?)`)
+    (name, initials, gender, area, rating, reviews, distance, years, soonest, certs_json, sample_reviews_json, bio, photo,
+     cert_photos_json, cccd_front, cccd_back, status, created_at)
+    VALUES (?,?,?,?,5.0,0,?,?,?,?,'[]',?,?,?,?,?,'pending',?)`)
     .run(name, makeInitials(name), gender, area, 2.0, years, 'Theo lịch hẹn',
-      JSON.stringify(certs), bio, photo, Date.now());
+      JSON.stringify(certs), bio, photo, JSON.stringify(certPhotos), cccdFront, cccdBack, Date.now());
   res.json({ ok: true });
 });
 
@@ -459,9 +466,17 @@ app.get('/api/admin/bookings', authAdmin, (req, res) => {
 // Duyệt kỹ thuật viên đăng ký
 app.get('/api/admin/technicians', authAdmin, (req, res) => {
   const rows = db.prepare('SELECT * FROM technicians ORDER BY (status=\'pending\') DESC, created_at DESC').all().map((r) => {
-    const t = techRow(r); t.status = r.status; t.phone = r.phone; return t;
+    const t = techRow(r); t.status = r.status; t.phone = r.phone;
+    t.certPhotoCount = JSON.parse(r.cert_photos_json || '[]').length; t.hasCccd = !!(r.cccd_front && r.cccd_back);
+    return t;
   });
   res.json({ technicians: rows, pending: rows.filter((t) => t.status === 'pending').length });
+});
+// Giấy tờ (chứng chỉ + CCCD) của 1 KTV — tải riêng khi quản trị bấm xem, cho danh sách nhẹ
+app.get('/api/admin/technicians/:id/docs', authAdmin, (req, res) => {
+  const r = db.prepare('SELECT cert_photos_json, cccd_front, cccd_back FROM technicians WHERE id = ?').get(Number(req.params.id));
+  if (!r) return res.status(404).json({ error: 'Không tìm thấy KTV' });
+  res.json({ certPhotos: JSON.parse(r.cert_photos_json || '[]'), cccdFront: r.cccd_front, cccdBack: r.cccd_back });
 });
 app.post('/api/admin/technicians/:id/approve', authAdmin, (req, res) => {
   const info = db.prepare("UPDATE technicians SET status='approved' WHERE id=?").run(Number(req.params.id));

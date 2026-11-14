@@ -103,6 +103,24 @@
           <textarea id="ktvBio" rows="3" placeholder="Vài dòng về kinh nghiệm, phong cách làm việc của bạn..."></textarea>
         </label>
 
+        <div class="field">Ảnh chứng chỉ / bằng cấp <small>(tối đa 3 ảnh)</small>
+          <div class="ktv-docs" id="ktvCertList"></div>
+          <label class="btn btn-outline btn-block">📄 Thêm ảnh chứng chỉ
+            <input type="file" accept="image/*" multiple onchange="onKtvCert(event)" hidden />
+          </label>
+        </div>
+        <div class="field">Ảnh CCCD <small>(bắt buộc, đủ 2 mặt)</small>
+          <div class="ktv-docs ktv-docs-2">
+            <label class="ktv-doc-pick" id="ktvCccdFront">🪪<br>Mặt trước
+              <input type="file" accept="image/*" onchange="onKtvCccd(event, 'front')" hidden />
+            </label>
+            <label class="ktv-doc-pick" id="ktvCccdBack">🪪<br>Mặt sau
+              <input type="file" accept="image/*" onchange="onKtvCccd(event, 'back')" hidden />
+            </label>
+          </div>
+          <p class="hint">🔒 Ảnh CCCD &amp; chứng chỉ chỉ dùng để RUM TRẦN xác minh hồ sơ, không hiển thị cho khách hàng.</p>
+        </div>
+
         <button class="btn btn-primary btn-block btn-lg" id="ktvRegBtn" onclick="submitTechApplication()">Gửi đăng ký</button>
         <button class="btn btn-ghost btn-block" onclick="goTo('login')">← Quay lại đăng nhập</button>
       </div>

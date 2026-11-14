@@ -636,6 +636,24 @@ h2{font-size:1.25rem;font-weight:800;margin-bottom:.3rem}
   background-size:cover;background-position:center;
 }
 .ktv-photo-preview.has-photo{border-style:solid;color:transparent}
+/* Giấy tờ KTV: chứng chỉ + CCCD */
+#screen-ktv-register input[type=file]{display:none}
+.ktv-docs{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin:.5rem 0}
+.ktv-docs:empty{display:none}
+.ktv-docs-2{grid-template-columns:1fr 1fr}
+.ktv-doc-thumb,.ktv-doc-pick{
+  position:relative;aspect-ratio:1.58;border-radius:10px;background:var(--surface-2) center/cover no-repeat;
+  border:2px solid var(--line);
+}
+.ktv-doc-pick{
+  border:2px dashed var(--gold);display:flex;align-items:center;justify-content:center;text-align:center;
+  font-size:.82rem;font-weight:800;color:var(--gold-d);line-height:1.3;cursor:pointer;
+}
+.ktv-doc-pick.has-photo{border-style:solid;color:transparent}
+.ktv-doc-del{
+  position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;border:0;
+  background:rgba(0,0,0,.6);color:#fff;font-size:.8rem;line-height:24px;padding:0;cursor:pointer;
+}
 #screen-ktv-register select,#screen-ktv-register .field select{
   display:block;width:100%;margin-top:.4rem;border:2px solid var(--line);border-radius:12px;
   background:var(--surface);padding:.75rem .8rem;color:var(--text);font-size:1rem;

@@ -44,9 +44,29 @@
       '<div><strong>' + esc(t.name) + '</strong> · ' + (t.gender === 'nam' ? 'Nam' : 'Nữ') + ' · 📍 ' + esc(t.area || '') + '</div>' +
       '<div style="font-size:.8rem;color:#7b6857">' + esc(t.phone || '') + ' · ' + t.years + ' năm KN · ' + esc((t.certs || []).join(', ')) + '</div>' +
       (t.bio ? '<div style="font-size:.8rem;margin-top:.2rem">' + esc(t.bio) + '</div>' : '') +
+      '<div style="font-size:.8rem;margin-top:.3rem">' + (t.hasCccd ? '🪪 Có CCCD 2 mặt' : '🪪 <span style="color:#d81f26">Chưa có CCCD</span>') +
+      ' · 📄 ' + (t.certPhotoCount || 0) + ' ảnh chứng chỉ' +
+      ((t.hasCccd || t.certPhotoCount) ? ' · <a href="#" onclick="showDocs(' + t.id + ', this);return false">Xem giấy tờ</a>' : '') + '</div>' +
+      '<div class="adm-docs" id="docs-' + t.id + '"></div>' +
       '<div style="margin-top:.4rem">' + badge + '</div></div>' +
       '<div class="adm-ktv-act">' + actions + '</div></div>';
   }
+  // Giấy tờ tải riêng khi bấm xem (ảnh nặng, chỉ quản trị thấy)
+  function showDocs(id, link) {
+    var box = el('docs-' + id);
+    if (box.innerHTML) { box.innerHTML = ''; link.textContent = 'Xem giấy tờ'; return; }
+    api('/api/admin/technicians/' + id + '/docs').then(function (d) {
+      var imgs = [];
+      if (d.cccdFront) imgs.push(['CCCD mặt trước', d.cccdFront]);
+      if (d.cccdBack) imgs.push(['CCCD mặt sau', d.cccdBack]);
+      (d.certPhotos || []).forEach(function (src, i) { imgs.push(['Chứng chỉ ' + (i + 1), src]); });
+      box.innerHTML = imgs.map(function (x) {
+        return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(x[1]) ? '<figure><img src="' + x[1] + '" alt="' + esc(x[0]) + '"><figcaption>' + esc(x[0]) + '</figcaption></figure>' : '';
+      }).join('');
+      link.textContent = 'Ẩn giấy tờ';
+    }).catch(function (e) { alert(e.message); });
+  }
+  window.showDocs = showDocs;
   function approveTech(id) { api('/api/admin/technicians/' + id + '/approve', 'POST').then(function () { loadTechnicians(); loadBookings(); }).catch(function (e) { alert(e.message); }); }
   function rejectTech(id) { api('/api/admin/technicians/' + id + '/reject', 'POST').then(function () { loadTechnicians(); }).catch(function (e) { alert(e.message); }); }
   window.approveTech = approveTech;

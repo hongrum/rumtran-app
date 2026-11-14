@@ -735,6 +735,58 @@
 
   /* ---------------- ĐĂNG KÝ KỸ THUẬT VIÊN ---------------- */
   var ktvPhotoData = null;
+  var ktvCertPhotos = [], ktvCccd = { front: null, back: null };
+  // Đọc file ảnh → thu nhỏ cạnh dài tối đa `max` px → JPEG base64
+  function shrinkImage(file, max, quality, done) {
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.width, h = img.height;
+        if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
+        else if (h > max) { w = Math.round(w * max / h); h = max; }
+        var c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        done(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function () { toast('Không đọc được ảnh, vui lòng chọn ảnh khác'); };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function renderKtvCerts() {
+    el('ktvCertList').innerHTML = ktvCertPhotos.map(function (src, i) {
+      return '<div class="ktv-doc-thumb" style="background-image:url(' + src + ')"><button type="button" class="ktv-doc-del" onclick="removeKtvCert(' + i + ')" aria-label="Xóa ảnh">✕</button></div>';
+    }).join('');
+  }
+  function onKtvCert(e) {
+    var files = Array.prototype.slice.call(e.target.files || []);
+    e.target.value = '';
+    if (ktvCertPhotos.length + files.length > 3) toast('Tối đa 3 ảnh chứng chỉ');
+    files.slice(0, 3 - ktvCertPhotos.length).forEach(function (f) {
+      // Giấy tờ cần đọc rõ chữ → giữ 1400px
+      shrinkImage(f, 1400, 0.8, function (data) { if (ktvCertPhotos.length < 3) { ktvCertPhotos.push(data); renderKtvCerts(); } });
+    });
+  }
+  window.onKtvCert = onKtvCert;
+  function removeKtvCert(i) { ktvCertPhotos.splice(i, 1); renderKtvCerts(); }
+  window.removeKtvCert = removeKtvCert;
+  function onKtvCccd(e, side) {
+    var file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    shrinkImage(file, 1400, 0.8, function (data) {
+      ktvCccd[side] = data;
+      var box = el(side === 'front' ? 'ktvCccdFront' : 'ktvCccdBack');
+      box.style.backgroundImage = 'url(' + data + ')';
+      box.classList.add('has-photo');
+    });
+  }
+  window.onKtvCccd = onKtvCccd;
+  function resetKtvDocs() {
+    ktvCertPhotos = []; ktvCccd = { front: null, back: null }; renderKtvCerts();
+    ['ktvCccdFront', 'ktvCccdBack'].forEach(function (id) { var b = el(id); b.style.backgroundImage = ''; b.classList.remove('has-photo'); });
+  }
   function renderTechRegister() {
     var sel = el('ktvArea');
     if (sel && !sel.dataset.filled) {
@@ -745,24 +797,13 @@
   function onKtvPhoto(e) {
     var file = e.target.files && e.target.files[0];
     if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function (ev) {
-      var img = new Image();
-      img.onload = function () {
-        // Thu nhỏ ảnh về tối đa 400px cho nhẹ, xuất JPEG
-        var max = 400, w = img.width, h = img.height;
-        if (w > h && w > max) { h = Math.round(h * max / w); w = max; }
-        else if (h > max) { w = Math.round(w * max / h); h = max; }
-        var c = document.createElement('canvas'); c.width = w; c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        ktvPhotoData = c.toDataURL('image/jpeg', 0.82);
-        var prev = el('ktvPhotoPreview');
-        prev.innerHTML = ''; prev.style.backgroundImage = 'url(' + ktvPhotoData + ')';
-        prev.classList.add('has-photo');
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+    // Thu nhỏ ảnh về tối đa 400px cho nhẹ, xuất JPEG
+    shrinkImage(file, 400, 0.82, function (data) {
+      ktvPhotoData = data;
+      var prev = el('ktvPhotoPreview');
+      prev.innerHTML = ''; prev.style.backgroundImage = 'url(' + ktvPhotoData + ')';
+      prev.classList.add('has-photo');
+    });
   }
   window.onKtvPhoto = onKtvPhoto;
   function submitTechApplication() {
@@ -771,14 +812,17 @@
       gender: el('ktvGender').value, area: el('ktvArea').value,
       years: el('ktvYears').value, skills: el('ktvSkills').value.trim(),
       bio: el('ktvBio').value.trim(), photo: ktvPhotoData,
+      certPhotos: ktvCertPhotos, cccdFront: ktvCccd.front, cccdBack: ktvCccd.back,
     };
     if (body.name.length < 2) { showErr('ktvRegError', 'Vui lòng nhập họ tên'); return; }
     if (body.phone.replace(/\D/g, '').length < 9) { showErr('ktvRegError', 'Số điện thoại chưa hợp lệ'); return; }
     if (!body.area) { showErr('ktvRegError', 'Vui lòng chọn khu vực'); return; }
+    if (!body.cccdFront || !body.cccdBack) { showErr('ktvRegError', 'Vui lòng tải ảnh CCCD đủ 2 mặt'); return; }
     el('ktvRegBtn').disabled = true;
     api('/api/technicians/apply', 'POST', body).then(function () {
       el('ktvRegBtn').disabled = false;
       ktvPhotoData = null;
+      resetKtvDocs();
       alert('Cảm ơn bạn đã đăng ký! Hồ sơ đang chờ RUM TRẦN duyệt. Chúng tôi sẽ liên hệ sớm.');
       goTo('login');
     }).catch(function (e) { el('ktvRegBtn').disabled = false; showErr('ktvRegError', e.message); });

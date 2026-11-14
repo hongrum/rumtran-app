@@ -134,4 +134,9 @@ ensureColumn('bookings', 'relation', 'relation TEXT');
 ensureColumn('users', 'referred_by', 'referred_by INTEGER');
 ensureColumn('users', 'first_order_credited', 'first_order_credited INTEGER NOT NULL DEFAULT 0');
 
+// Giấy tờ KTV nộp khi đăng ký — CHỈ quản trị xem, không bao giờ trả ra API công khai
+ensureColumn('technicians', 'cert_photos_json', "cert_photos_json TEXT NOT NULL DEFAULT '[]'");
+ensureColumn('technicians', 'cccd_front', 'cccd_front TEXT');
+ensureColumn('technicians', 'cccd_back', 'cccd_back TEXT');
+
 module.exports = db;

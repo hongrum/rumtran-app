@@ -22,13 +22,15 @@
   function api(path, method, body) {
     var headers = { 'Content-Type': 'application/json' };
     var t = token();
-    if (t) headers['x-user-id'] = t;
+    if (t) headers['x-session'] = t;
     return fetch(path, {
       method: method || 'GET',
       headers: headers,
       body: body ? JSON.stringify(body) : undefined,
     }).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (data) {
+        // Phiên hết hạn / bị quản trị xóa PIN / mã cũ dạng số thứ tự → về màn đăng nhập
+        if (r.status === 401 && t && path !== '/api/auth/login') { clearLogin(); goTo('login'); }
         if (!r.ok) throw new Error((data && data.error) || ('Lỗi ' + r.status));
         return data;
       });
@@ -176,13 +178,42 @@
       box.innerHTML = '<a class="brandbar-call" href="tel:0762419688" aria-label="Gọi hotline">📞</a>';
     }
   }
+  // Bước PIN: 'set' = đặt PIN mới (khách mới / chưa có PIN), 'enter' = nhập PIN đã có
+  var pinMode = null;
+  function showPinBox(mode) {
+    pinMode = mode;
+    el('pinBox').classList.remove('hidden');
+    el('pin2Wrap').classList.toggle('hidden', mode !== 'set');
+    el('pinForgot').classList.toggle('hidden', mode !== 'enter');
+    el('pinLabel').textContent = mode === 'set' ? 'Đặt mã PIN (4–6 số)' : 'Mã PIN';
+    el('pinHint').textContent = mode === 'set'
+      ? '🔒 Đặt mã PIN để bảo vệ tài khoản — lần sau đăng nhập trên máy khác sẽ cần mã này.'
+      : '🔒 Nhập mã PIN của tài khoản này.';
+    el('loginBtn').textContent = mode === 'set' ? 'Đặt PIN & đăng nhập' : 'Đăng nhập';
+    el('loginPin').value = ''; el('loginPin2').value = '';
+    el('loginPin').focus();
+  }
+  function hidePinBox() {
+    pinMode = null;
+    el('pinBox').classList.add('hidden');
+    el('loginBtn').textContent = 'Đăng nhập / Đăng ký';
+  }
   function doLogin() {
     var name = el('loginName').value.trim();
     var phone = el('loginPhone').value.trim();
     if (phone.replace(/\D/g, '').length < 9) { showErr('loginError', 'Số điện thoại chưa hợp lệ'); return; }
+    var body = { phone: phone, name: name, ref: localStorage.getItem('rt_ref') || '' };
+    if (pinMode) {
+      var pin = el('loginPin').value.trim();
+      if (!/^\d{4,6}$/.test(pin)) { showErr('loginError', 'Mã PIN gồm 4–6 chữ số'); return; }
+      if (pinMode === 'set' && pin !== el('loginPin2').value.trim()) { showErr('loginError', 'Hai lần nhập mã PIN chưa khớp'); return; }
+      body.pin = pin;
+    }
     el('loginBtn').disabled = true;
-    var ref = localStorage.getItem('rt_ref') || '';
-    api('/api/auth/login', 'POST', { phone: phone, name: name, ref: ref }).then(function (res) {
+    api('/api/auth/login', 'POST', body).then(function (res) {
+      el('loginBtn').disabled = false;
+      if (res.needPin) { showPinBox(res.needPin); return; }
+      hidePinBox();
       localStorage.setItem(TOKEN_KEY, res.token);
       localStorage.removeItem('rt_ref'); // mã giới thiệu đã dùng khi đăng ký
       setUser(res.user);
@@ -196,13 +227,19 @@
   }
   window.doLogin = doLogin;
 
-  function logout() {
+  function clearLogin() {
     localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem(FLOW_KEY);
     user = null; flow = defaultFlow();
     renderBrandRight();
+  }
+  function logout() {
+    api('/api/auth/logout', 'POST').catch(function () {}); // hủy phiên trên máy chủ
+    clearLogin();
     goTo('login');
   }
   window.logout = logout;
+  // Đổi số điện thoại thì hỏi lại PIN từ đầu (số khác có thể là tài khoản khác)
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'loginPhone' && pinMode) hidePinBox(); });
 
   /* ---------------- HOME ---------------- */
   function renderHomeServices() {

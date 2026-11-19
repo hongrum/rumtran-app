@@ -57,6 +57,16 @@
         <label class="field">Số điện thoại
           <input id="loginPhone" type="tel" inputmode="numeric" placeholder="VD: 0901 234 567" />
         </label>
+        <div id="pinBox" class="hidden">
+          <p class="hint" id="pinHint" style="margin:.2rem 0 .6rem"></p>
+          <label class="field"><span id="pinLabel">Mã PIN</span>
+            <input id="loginPin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="4–6 chữ số" />
+          </label>
+          <label class="field hidden" id="pin2Wrap">Nhập lại mã PIN
+            <input id="loginPin2" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" placeholder="Nhập lại để chắc chắn" />
+          </label>
+          <p class="muted small" id="pinForgot" style="margin:-.3rem 0 .8rem">Quên mã PIN? <a href="https://zalo.me/0762419688" target="_blank" rel="noopener">Nhắn Zalo</a> hoặc gọi <a href="tel:0762419688">0762 419 688</a> để được mở khóa.</p>
+        </div>
         <button class="btn btn-primary btn-block btn-lg" id="loginBtn" onclick="doLogin()">Đăng nhập / Đăng ký</button>
         <p class="muted small center" style="margin-top:.8rem">Bằng việc tiếp tục, Anh/Chị đồng ý cho chúng tôi lưu họ tên, số điện thoại và thông tin đặt lịch để phục vụ, chăm sóc và gửi ưu đãi. Xem <a href="https://rumtrankhoedep.store/chinh-sach-bao-mat" target="_blank" rel="noopener">Chính sách bảo mật</a>.</p>
         <hr class="confirm-divider" style="margin:1.2rem 0">

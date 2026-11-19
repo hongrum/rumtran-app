@@ -35,11 +35,17 @@
         return '<tr><td>' + esc(c.name || '—') + (c.membership ? '<br><small>🎖️ ' + esc(c.membership) + '</small>' : '') + '</td>' +
           '<td><a href="tel:' + esc(c.phone) + '">' + esc(c.phone) + '</a></td>' +
           '<td>' + (c.contactPhones.length ? c.contactPhones.map(function (p) { return '<a href="tel:' + esc(p) + '">' + esc(p) + '</a>'; }).join('<br>') : '<small style="color:#7b6857">—</small>') + '</td>' +
-          '<td>' + c.orders + '</td><td class="hide-sm">' + money(c.spent) + '</td><td class="hide-sm">' + day(c.createdAt) + '</td></tr>';
-      }).join('') || '<tr><td colspan="6" style="text-align:center;color:#7b6857;padding:1.5rem">Chưa có khách nào.</td></tr>';
+          '<td>' + c.orders + '</td><td class="hide-sm">' + money(c.spent) + '</td><td class="hide-sm">' + day(c.createdAt) + '</td>' +
+          '<td>' + (c.hasPin ? (c.pinLocked ? '⛔ Đang khóa' : '🔒 Có PIN') + '<br><button class="btn btn-ghost" style="min-height:auto;padding:.3rem .6rem;font-size:.75rem" onclick="resetPin(' + Number(c.id) + ')">🔓 Xóa mã PIN</button>' : '<small style="color:#7b6857">Chưa đặt</small>') + '</td></tr>';
+      }).join('') || '<tr><td colspan="7" style="text-align:center;color:#7b6857;padding:1.5rem">Chưa có khách nào.</td></tr>';
     }).catch(function () {});
   }
   window.loadCustomers = loadCustomers;
+  function resetPin(id) {
+    if (!confirm('Xóa mã PIN của khách này?\n\nChỉ làm khi đã xác minh đúng chủ tài khoản (hỏi tên, địa chỉ, đơn gần nhất). Khách sẽ đặt PIN mới ở lần đăng nhập tới.')) return;
+    api('/api/admin/customers/' + id + '/reset-pin', 'POST').then(function () { loadCustomers(); alert('Đã xóa mã PIN. Báo khách mở app, nhập số điện thoại và đặt PIN mới.'); }).catch(function (e) { alert(e.message); });
+  }
+  window.resetPin = resetPin;
   // Tải file Excel (cần gửi khóa quản trị trong header nên tải qua fetch)
   function downloadCustomers() {
     fetch('/api/admin/customers.csv', { headers: { 'x-admin-key': key() || '' } })

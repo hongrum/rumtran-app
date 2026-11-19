@@ -134,6 +134,18 @@ ensureColumn('bookings', 'relation', 'relation TEXT');
 ensureColumn('users', 'referred_by', 'referred_by INTEGER');
 ensureColumn('users', 'first_order_credited', 'first_order_credited INTEGER NOT NULL DEFAULT 0');
 
+// Đăng nhập an toàn: mã PIN (lưu dạng băm scrypt, không lưu số thật) + khóa tạm khi nhập sai nhiều lần
+ensureColumn('users', 'pin_hash', 'pin_hash TEXT');
+ensureColumn('users', 'pin_fails', 'pin_fails INTEGER NOT NULL DEFAULT 0');
+ensureColumn('users', 'pin_locked_until', 'pin_locked_until INTEGER');
+// Phiên đăng nhập: mã bí mật ngẫu nhiên thay cho số thứ tự user (không đoán được)
+db.exec(`CREATE TABLE IF NOT EXISTS sessions (
+  token      TEXT PRIMARY KEY,
+  user_id    INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);`);
+
 // Giấy tờ KTV nộp khi đăng ký — CHỈ quản trị xem, không bao giờ trả ra API công khai
 ensureColumn('technicians', 'cert_photos_json', "cert_photos_json TEXT NOT NULL DEFAULT '[]'");
 ensureColumn('technicians', 'cccd_front', 'cccd_front TEXT');

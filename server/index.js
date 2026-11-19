@@ -4,6 +4,7 @@
    tích điểm, hoa hồng, ví KTV đều do server quyết định (client chỉ hiển thị).
    ===================================================== */
 const path = require('path');
+const crypto = require('crypto');
 const express = require('express');
 const QRCode = require('qrcode');
 const db = require('./db');
@@ -104,11 +105,29 @@ function publicUser(u) {
   };
 }
 
-/* ---------------- Auth (đăng nhập bằng SĐT — nhẹ cho MVP) ---------------- */
+/* ---------------- Auth: SĐT + mã PIN, phiên đăng nhập bằng mã bí mật ngẫu nhiên ---------------- */
+const PIN_MAX_FAILS = 5;            // nhập sai 5 lần liên tiếp →
+const PIN_LOCK_MS = 15 * 60 * 1000; // khóa 15 phút
+function hashPin(pin) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return salt + ':' + crypto.scryptSync(pin, salt, 32).toString('hex');
+}
+function checkPin(pin, stored) {
+  const [salt, hash] = String(stored || '').split(':');
+  if (!salt || !hash) return false;
+  const a = Buffer.from(hash, 'hex'), b = crypto.scryptSync(pin, salt, 32);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+function newSession(userId) {
+  const token = crypto.randomBytes(32).toString('hex');
+  db.prepare('INSERT INTO sessions (token, user_id, created_at) VALUES (?,?,?)').run(token, userId, Date.now());
+  return token;
+}
 function authUser(req, res, next) {
-  const id = Number(req.header('x-user-id'));
-  if (!id) return res.status(401).json({ error: 'Chưa đăng nhập' });
-  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+  const token = String(req.header('x-session') || '');
+  const s = token.length === 64 ? db.prepare('SELECT user_id FROM sessions WHERE token = ?').get(token) : null;
+  if (!s) return res.status(401).json({ error: 'Phiên đăng nhập đã hết, vui lòng đăng nhập lại' });
+  const u = db.prepare('SELECT * FROM users WHERE id = ?').get(s.user_id);
   if (!u) return res.status(401).json({ error: 'Người dùng không tồn tại' });
   req.user = u;
   next();
@@ -118,8 +137,32 @@ app.post('/api/auth/login', (req, res) => {
   const phone = String(req.body.phone || '').trim();
   const name = String(req.body.name || '').trim();
   const ref = String(req.body.ref || '').trim();
+  const pin = String(req.body.pin || '');
+  const pinOk = /^\d{4,6}$/.test(pin);
   if (phone.replace(/\D/g, '').length < 9) return res.status(400).json({ error: 'Số điện thoại không hợp lệ' });
   let u = db.prepare('SELECT * FROM users WHERE phone = ?').get(phone);
+  // Tài khoản đã có PIN → phải nhập đúng PIN
+  if (u && u.pin_hash) {
+    if (!pin) return res.json({ needPin: 'enter' });
+    if (u.pin_locked_until && u.pin_locked_until > Date.now()) {
+      const mins = Math.ceil((u.pin_locked_until - Date.now()) / 60000);
+      return res.status(429).json({ error: 'Nhập sai quá nhiều lần. Vui lòng thử lại sau ' + mins + ' phút hoặc nhắn Zalo 0762 419 688.' });
+    }
+    if (!checkPin(pin, u.pin_hash)) {
+      const fails = (u.pin_fails || 0) + 1;
+      if (fails >= PIN_MAX_FAILS) {
+        db.prepare('UPDATE users SET pin_fails = 0, pin_locked_until = ? WHERE id = ?').run(Date.now() + PIN_LOCK_MS, u.id);
+        return res.status(429).json({ error: 'Nhập sai ' + PIN_MAX_FAILS + ' lần — tài khoản tạm khóa 15 phút.' });
+      }
+      db.prepare('UPDATE users SET pin_fails = ? WHERE id = ?').run(fails, u.id);
+      return res.status(401).json({ error: 'Mã PIN không đúng (còn ' + (PIN_MAX_FAILS - fails) + ' lần thử)' });
+    }
+    db.prepare('UPDATE users SET pin_fails = 0, pin_locked_until = NULL WHERE id = ?').run(u.id);
+  } else {
+    // Khách mới / khách cũ chưa có PIN / vừa được quản trị xóa PIN → đặt PIN mới
+    if (!pin) return res.json({ needPin: 'set' });
+    if (!pinOk) return res.status(400).json({ error: 'Mã PIN gồm 4–6 chữ số' });
+  }
   let isNew = false;
   if (!u) {
     isNew = true;
@@ -137,9 +180,15 @@ app.post('/api/auth/login', (req, res) => {
     db.prepare('UPDATE users SET name = ? WHERE id = ?').run(name, u.id);
     u.name = name;
   }
+  if (!u.pin_hash) db.prepare('UPDATE users SET pin_hash = ?, pin_fails = 0, pin_locked_until = NULL WHERE id = ?').run(hashPin(pin), u.id);
   ensureReferralCode(u);
   u = db.prepare('SELECT * FROM users WHERE id = ?').get(u.id);
-  res.json({ token: String(u.id), user: publicUser(u), isNew: isNew });
+  res.json({ token: newSession(u.id), user: publicUser(u), isNew: isNew });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  db.prepare('DELETE FROM sessions WHERE token = ?').run(String(req.header('x-session') || ''));
+  res.json({ ok: true });
 });
 
 /* ---------------- Catalog (danh mục công khai) ---------------- */
@@ -490,11 +539,20 @@ function customerList() {
       orders: bks.length, spent: bks.reduce((s, b) => s + b.total, 0),
       lastOrderAt: bks.length ? bks[0].created_at : null,
       contactPhones: otherPhones, membership: u.membership_label || '', points: u.loyalty_points,
+      hasPin: !!u.pin_hash, pinLocked: !!(u.pin_locked_until && u.pin_locked_until > Date.now()),
     };
   });
 }
 app.get('/api/admin/customers', authAdmin, (req, res) => {
   res.json({ customers: customerList() });
+});
+// Khách quên PIN: quản trị xác minh qua Zalo/điện thoại rồi xóa PIN → khách đặt PIN mới ở lần đăng nhập tới
+app.post('/api/admin/customers/:id/reset-pin', authAdmin, (req, res) => {
+  const id = Number(req.params.id);
+  const info = db.prepare('UPDATE users SET pin_hash = NULL, pin_fails = 0, pin_locked_until = NULL WHERE id = ?').run(id);
+  if (!info.changes) return res.status(404).json({ error: 'Không tìm thấy khách' });
+  db.prepare('DELETE FROM sessions WHERE user_id = ?').run(id); // đăng xuất mọi máy đang đăng nhập
+  res.json({ ok: true });
 });
 // Xuất Excel (CSV, UTF-8 có BOM để Excel đọc đúng tiếng Việt)
 app.get('/api/admin/customers.csv', authAdmin, (req, res) => {

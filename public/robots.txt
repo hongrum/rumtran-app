@@ -1,0 +1,6 @@
+# RUM TRẦN KHỎE ĐẸP — app đặt lịch
+# Trang giới thiệu chính cho Google: https://rumtrankhoedep.store/
+User-agent: *
+Allow: /
+Disallow: /api/
+# admin.html tự có thẻ noindex (không chặn ở đây để Google đọc được thẻ đó)

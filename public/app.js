@@ -659,7 +659,7 @@
   window.closeShareModal = closeShareModal;
   function shareReferral() {
     var link = referralLink();
-    var text = 'Mình dùng RUM TRẦN KHỎE ĐẸP — dưỡng sinh, chăm sóc sức khỏe tận nhà, 350k trọn gói không phát sinh. Đăng ký qua link này nhé: ';
+    var text = 'Mình dùng RUM TRẦN KHỎE ĐẸP — dưỡng sinh, chăm sóc sức khỏe tận nhà, 350k/60 phút trọn gói, không phát sinh thêm. Đăng ký qua link này nhé: ';
     if (navigator.share) {
       navigator.share({ title: 'RUM TRẦN KHỎE ĐẸP', text: text, url: link }).catch(function () {});
     } else {

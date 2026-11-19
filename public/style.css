@@ -370,6 +370,8 @@ h2{font-size:1.25rem;font-weight:800;margin-bottom:.3rem}
   outline:2px solid var(--line);
 }
 .qr-caption{font-size:.76rem;color:var(--muted);margin:.7rem 0}
+.qr-real{display:block;width:100%;max-width:240px;height:auto;margin:0 auto;border-radius:12px}
+.qr-warn{font-size:.78rem;color:var(--red);margin:.6rem 0 0}
 .qr-bankinfo{text-align:left;font-size:.82rem;background:var(--surface-2);border-radius:10px;padding:.7rem .8rem}
 .qr-bankinfo div{display:flex;justify-content:space-between;padding:.2rem 0}
 .qr-bankinfo span{color:var(--muted)}

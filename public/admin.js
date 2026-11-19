@@ -24,7 +24,35 @@
   function adminLogout() { localStorage.removeItem(KEY); location.reload(); }
   window.adminLogout = adminLogout;
 
-  function showApp() { el('adminLogin').classList.add('hidden'); el('adminApp').classList.remove('hidden'); loadBookings(); loadTechnicians(); }
+  function showApp() { el('adminLogin').classList.add('hidden'); el('adminApp').classList.remove('hidden'); loadBookings(); loadTechnicians(); loadCustomers(); }
+
+  /* Khách hàng: SĐT đăng nhập + SĐT liên hệ khác đã dùng khi đặt lịch */
+  function day(ts) { return ts ? new Date(ts).toLocaleDateString('vi-VN') : ''; }
+  function loadCustomers() {
+    api('/api/admin/customers').then(function (res) {
+      el('custCount').textContent = '(' + res.customers.length + ')';
+      el('customerRows').innerHTML = res.customers.map(function (c) {
+        return '<tr><td>' + esc(c.name || '—') + (c.membership ? '<br><small>🎖️ ' + esc(c.membership) + '</small>' : '') + '</td>' +
+          '<td><a href="tel:' + esc(c.phone) + '">' + esc(c.phone) + '</a></td>' +
+          '<td>' + (c.contactPhones.length ? c.contactPhones.map(function (p) { return '<a href="tel:' + esc(p) + '">' + esc(p) + '</a>'; }).join('<br>') : '<small style="color:#7b6857">—</small>') + '</td>' +
+          '<td>' + c.orders + '</td><td class="hide-sm">' + money(c.spent) + '</td><td class="hide-sm">' + day(c.createdAt) + '</td></tr>';
+      }).join('') || '<tr><td colspan="6" style="text-align:center;color:#7b6857;padding:1.5rem">Chưa có khách nào.</td></tr>';
+    }).catch(function () {});
+  }
+  window.loadCustomers = loadCustomers;
+  // Tải file Excel (cần gửi khóa quản trị trong header nên tải qua fetch)
+  function downloadCustomers() {
+    fetch('/api/admin/customers.csv', { headers: { 'x-admin-key': key() || '' } })
+      .then(function (r) { if (!r.ok) throw new Error('Không tải được (lỗi ' + r.status + ')'); return r.blob(); })
+      .then(function (blob) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'khach-hang-rumtran-' + new Date().toISOString().slice(0, 10) + '.csv';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      }).catch(function (e) { alert(e.message); });
+  }
+  window.downloadCustomers = downloadCustomers;
 
   function loadTechnicians() {
     api('/api/admin/technicians').then(function (res) {
@@ -96,7 +124,9 @@
     var rating = (b.ratingStars ? '<br><small>⭐ ' + b.ratingStars + '</small>' : '');
     return '<tr>' +
       '<td><strong>' + esc(b.code) + '</strong>' + (b.urgent ? '<br><small style="color:#d81f26">⚡ gấp</small>' : '') + '</td>' +
-      '<td>' + esc(b.custName) + '<br><small>' + esc(b.custPhone) + '</small>' + forWho + '</td>' +
+      '<td>' + esc(b.custName) + '<br><small>📞 ' + esc(b.custPhone) + '</small>' +
+        (b.userPhone && b.userPhone.replace(/\D/g, '') !== String(b.custPhone || '').replace(/\D/g, '') ? '<br><small style="color:#7b6857">👤 TK: ' + esc(b.userPhone) + (b.userName ? ' (' + esc(b.userName) + ')' : '') + '</small>' : '') +
+        forWho + '</td>' +
       '<td class="hide-sm">' + esc(svc) + '</td>' +
       '<td class="hide-sm">' + esc(b.dateTimeLabel || '') + '<br><small>' + esc(b.address || '') + '</small></td>' +
       '<td>' + money(b.total) + rating + '</td>' +

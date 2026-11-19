@@ -47,13 +47,12 @@
       <input id="adminKey" type="password" placeholder="Nhập khóa quản trị" />
     </label>
     <button class="btn btn-primary btn-block btn-lg" onclick="adminLogin()">Đăng nhập</button>
-    <p class="muted small center" style="margin-top:.8rem">Khóa mặc định (demo): <code>rumtran-admin</code> — đổi khi lên thật.</p>
   </div>
 
   <div id="adminApp" class="hidden">
     <div class="admin-head">
       <h1>🔧 Điều phối đơn — RUM TRẦN</h1>
-      <div><button class="btn btn-outline" onclick="loadBookings()">🔄 Làm mới</button>
+      <div><button class="btn btn-outline" onclick="loadBookings();loadCustomers()">🔄 Làm mới</button>
         <button class="btn btn-ghost" onclick="adminLogout()">Thoát</button></div>
     </div>
     <div class="stat-row" id="statRow"></div>
@@ -71,6 +70,17 @@
       </table>
     </div>
     <p class="muted small" style="margin-top:1rem">Hiển thị tối đa 200 đơn gần nhất.</p>
+
+    <div class="admin-head" style="margin:1.4rem 0 .4rem">
+      <h2 style="color:var(--red);font-size:1.1rem;margin:0">👥 Khách hàng <span id="custCount" class="muted small"></span></h2>
+      <button class="btn btn-outline" onclick="downloadCustomers()">⬇️ Tải danh sách (Excel)</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Khách</th><th>SĐT đăng nhập</th><th>SĐT liên hệ khác</th><th>Đơn</th><th class="hide-sm">Tổng chi</th><th class="hide-sm">Ngày đăng ký</th></tr></thead>
+        <tbody id="customerRows"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 <script src="admin.js"></script>

@@ -465,7 +465,9 @@ app.get('/api/admin/bookings', authAdmin, (req, res) => {
   const rows = db.prepare('SELECT * FROM bookings ORDER BY created_at DESC LIMIT 200').all();
   const list = rows.map((b) => {
     const bk = rowBooking(b);
-    bk.userName = (db.prepare('SELECT name FROM users WHERE id = ?').get(b.user_id) || {}).name || '';
+    const u = db.prepare('SELECT name, phone FROM users WHERE id = ?').get(b.user_id) || {};
+    bk.userName = u.name || '';
+    bk.userPhone = u.phone || ''; // SĐT tài khoản (lúc đăng nhập) — có thể khác SĐT liên hệ của đơn
     return bk;
   });
   const stats = {
@@ -475,6 +477,37 @@ app.get('/api/admin/bookings', authAdmin, (req, res) => {
     doanhThu: rows.reduce((s, b) => s + b.total, 0),
   };
   res.json({ bookings: list, stats, techs: getApprovedTechs(), statuses: STATUSES });
+});
+
+// Danh sách khách hàng: SĐT đăng nhập + các SĐT liên hệ đã dùng khi đặt lịch
+function customerList() {
+  const digits = (p) => String(p || '').replace(/\D/g, '');
+  return db.prepare('SELECT * FROM users ORDER BY created_at DESC').all().map((u) => {
+    const bks = db.prepare('SELECT cust_name, cust_phone, total, created_at FROM bookings WHERE user_id = ? ORDER BY created_at DESC').all(u.id);
+    const otherPhones = [...new Set(bks.map((b) => b.cust_phone).filter((p) => p && digits(p) !== digits(u.phone)))];
+    return {
+      id: u.id, name: u.name, phone: u.phone, createdAt: u.created_at,
+      orders: bks.length, spent: bks.reduce((s, b) => s + b.total, 0),
+      lastOrderAt: bks.length ? bks[0].created_at : null,
+      contactPhones: otherPhones, membership: u.membership_label || '', points: u.loyalty_points,
+    };
+  });
+}
+app.get('/api/admin/customers', authAdmin, (req, res) => {
+  res.json({ customers: customerList() });
+});
+// Xuất Excel (CSV, UTF-8 có BOM để Excel đọc đúng tiếng Việt)
+app.get('/api/admin/customers.csv', authAdmin, (req, res) => {
+  const day = (ts) => (ts ? new Date(ts + 7 * 3600e3).toISOString().slice(0, 10) : '');
+  // Chặn công thức Excel (=, +, -, @) lọt vào từ dữ liệu khách nhập
+  const cell = (v) => { let s = String(v == null ? '' : v); if (/^[=+\-@]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  // SĐT: chỉ giữ chữ số, bọc ="..." để Excel không xóa số 0 ở đầu
+  const phoneCell = (list) => { const s = list.map((p) => String(p || '').replace(/\D/g, '')).filter(Boolean).join(' / '); return s ? '"=""' + s + '"""' : '""'; };
+  const lines = [['Họ tên', 'SĐT đăng nhập', 'SĐT liên hệ khác', 'Ngày đăng ký', 'Số đơn', 'Tổng chi (đ)', 'Đơn gần nhất', 'Hạng hội viên', 'Điểm'].map(cell).join(',')];
+  customerList().forEach((c) => lines.push([cell(c.name), phoneCell([c.phone]), phoneCell(c.contactPhones), cell(day(c.createdAt)), cell(c.orders), cell(c.spent), cell(day(c.lastOrderAt)), cell(c.membership), cell(c.points)].join(',')));
+  res.set('Content-Type', 'text/csv; charset=utf-8')
+    .set('Content-Disposition', 'attachment; filename="khach-hang-rumtran.csv"')
+    .send('﻿' + lines.join('\r\n'));
 });
 
 // Duyệt kỹ thuật viên đăng ký

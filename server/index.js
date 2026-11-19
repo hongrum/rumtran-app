@@ -5,7 +5,9 @@
    ===================================================== */
 const path = require('path');
 const express = require('express');
+const QRCode = require('qrcode');
 const db = require('./db');
+const vietqr = require('./vietqr');
 const {
   SERVICES, ADDONS, PRODUCTS, MEMBERSHIP_PLANS, TECHS, STATUSES, CONFIG,
 } = require('./data');
@@ -149,6 +151,18 @@ app.get('/api/catalog', (_req, res) => {
     areas: CONFIG.areas,
     config: { pointRate: CONFIG.pointRate, referralPct: CONFIG.referralPct, ktvPlatformFee: CONFIG.ktvPlatformFee, ktvMinBalance: CONFIG.ktvMinBalance, brand: CONFIG.brand },
   });
+});
+
+/* ---------------- Mã QR chuyển khoản có sẵn số tiền (VietQR động) ---------------- */
+app.get('/api/payqr.svg', async (req, res) => {
+  const amount = parseInt(req.query.amount, 10);
+  if (!Number.isInteger(amount) || amount < 1000 || amount > 100000000) return res.status(400).json({ error: 'Số tiền không hợp lệ' });
+  try {
+    const svg = await QRCode.toString(vietqr.buildPayload(amount, req.query.note), { type: 'svg', errorCorrectionLevel: 'M', margin: 2 });
+    res.set('Content-Type', 'image/svg+xml').set('Cache-Control', 'public, max-age=86400').send(svg);
+  } catch (e) {
+    res.status(500).json({ error: 'Không tạo được mã QR' });
+  }
 });
 
 /* ---------------- Kỹ thuật viên đăng ký tham gia (công khai) ---------------- */

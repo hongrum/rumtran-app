@@ -458,8 +458,17 @@
     el('payCashLabel').classList.toggle('selected', flow.payment === 'cash');
     el('payTransferLabel').classList.toggle('selected', flow.payment === 'transfer');
     el('qrBlock').classList.toggle('hidden', flow.payment !== 'transfer');
-    el('qrOrderCode').textContent = 'RT-' + (flow.custPhone || '').replace(/\D/g, '').slice(-4);
-    el('paymentTotal').innerHTML = '<span>Tổng thanh toán</span><strong>' + money(computeTotal()) + '</strong>';
+    var note = 'RT-' + (flow.custPhone || '').replace(/\D/g, '').slice(-4);
+    var total = computeTotal();
+    el('qrOrderCode').textContent = note;
+    el('qrAmount').textContent = money(total);
+    if (flow.payment === 'transfer' && total >= 1000) {
+      // Mã QR động: quét là app ngân hàng tự điền sẵn số tiền + nội dung (lỗi thì tự quay về mã tĩnh)
+      var src = '/api/payqr.svg?amount=' + total + '&note=' + encodeURIComponent(note);
+      if (el('qrImg').getAttribute('src') !== src) el('qrImg').setAttribute('src', src);
+      el('qrCaption').textContent = 'Mở app ngân hàng / MoMo / ZaloPay → Quét mã — số tiền & nội dung đã điền sẵn';
+    }
+    el('paymentTotal').innerHTML = '<span>Tổng thanh toán</span><strong>' + money(total) + '</strong>';
     var radio = document.querySelector('input[name="pay"][value="' + flow.payment + '"]'); if (radio) radio.checked = true;
   }
 

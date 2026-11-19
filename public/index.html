@@ -291,11 +291,12 @@
       </div>
 
       <div id="qrBlock" class="qr-block hidden">
-        <img class="qr-real" src="/qr-thanh-toan.png" alt="Mã QR chuyển khoản Ngân hàng MB — TRAN THI HONG RUM" width="520" height="658" />
-        <p class="qr-caption">Mở app ngân hàng / MoMo / ZaloPay → Quét mã → nhập số tiền &amp; nội dung bên dưới</p>
+        <img class="qr-real" id="qrImg" src="/qr-thanh-toan.png" alt="Mã QR chuyển khoản Ngân hàng MB — TRAN THI HONG RUM" onerror="this.onerror=null;this.src='/qr-thanh-toan.png'" />
+        <p class="qr-caption" id="qrCaption">Mở app ngân hàng / MoMo / ZaloPay → Quét mã → nhập số tiền &amp; nội dung bên dưới</p>
         <div class="qr-bankinfo">
           <div><span>Ngân hàng:</span><strong>MB Bank</strong></div>
           <div><span>Chủ TK:</span><strong>TRAN THI HONG RUM</strong></div>
+          <div><span>Số tiền:</span><strong id="qrAmount">—</strong></div>
           <div><span>Nội dung CK:</span><strong id="qrOrderCode">—</strong></div>
         </div>
         <p class="qr-warn">⚠️ Chỉ chuyển khoản vào tài khoản đúng tên <b>TRAN THI HONG RUM</b>, <b>không chuyển cho cá nhân nhân viên</b>. Rum Trần Khỏe Đẹp không chịu trách nhiệm với khoản tiền chuyển cho nhân viên. Mua liệu trình / gói: liên hệ 0762 419 688.</p>
